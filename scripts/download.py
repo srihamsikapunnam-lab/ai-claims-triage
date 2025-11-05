@@ -5,6 +5,9 @@ from pathlib import Path
 
 def download_team_data():
     """Script for teammates to download data from Google Drive"""
+    project_root = Path(__file__).parent.parent  # This goes from scripts/ to project root
+    raw_path = project_root / "data" / "raw"     # Now points to correct location
+    
     data_files = {
         'archive.zip': 'https://drive.google.com/file/d/1z7cboND9phtkZlCEkfi-8TNitPZwh6nJ/view?usp=drive_link',
         'archive (1).zip': 'https://drive.google.com/file/d/1Q84jdimHnkWPkCCVdLwc7BjZEDZ2PbNQ/view?usp=drive_link'
