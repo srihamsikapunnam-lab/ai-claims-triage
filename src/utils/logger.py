@@ -25,5 +25,4 @@ def setup_logger(name, log_level=logging.INFO):
     file_handler = logging.FileHandler(log_dir / "model_training.log")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
-    
     return logger
