@@ -19,7 +19,7 @@ class FraudModelService:
         """Load the trained RandomForest model from the API-ready file"""
         try:
             # Use the API-ready model
-            model_path = Path("models/fraud_model_api_ready.joblib")
+            model_path = Path(__file__).parent.parent.parent / "models" / "fraud_model_api_ready.joblib"
             
             if model_path.exists():
                 model_data = joblib.load(model_path)
