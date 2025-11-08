@@ -179,18 +179,36 @@ class FraudModelService:
             # Generate explanations
             explanations = self.generate_explanations(claim_data, fraud_probability)
             
+            # FIXED: Intelligent status logic based on both prediction and risk
+            if fraud_probability > 0.5:  # If predicted as Fraud
+                if risk_score >= 80:
+                    status = "High Priority Investigation"
+                elif risk_score >= 60:
+                    status = "Manual Review Required"
+                elif risk_score >= 40:
+                    status = "Additional Verification Needed"
+                else:
+                    status = "Flagged for Review"
+            else:  # If predicted as Legitimate
+                if risk_score < 20:
+                    status = "Auto-Approved"
+                elif risk_score < 40:
+                    status = "Fast-Track Approval"
+                else:
+                    status = "Standard Review"
+            
             response = {
                 "prediction": "Fraud" if fraud_probability > 0.5 else "Legitimate",
                 "probability": round(fraud_probability, 4),
                 "risk_score": risk_score,
                 "risk_category": self.get_risk_category(risk_score),
                 "explanation": explanations,
-                "status": "Under Review" if risk_score > 70 else "Auto-Approved",
-                "model_version": "RandomForest_Production_v1.0",
+                "status": status,
+                "model_version": "RandomForest_Production_v1.1",  # Updated version
                 "features_used": self.feature_names
             }
             
-            print(f"📤 Prediction result: Risk Score {risk_score}, Category: {response['risk_category']}")
+            print(f"📤 Prediction result: Risk Score {risk_score}, Category: {response['risk_category']}, Status: {status}")
             return response
             
         except Exception as e:
@@ -260,7 +278,7 @@ class FraudModelService:
                 "Length of stay unusually short", 
                 "Hospital has higher than average previous claims"
             ],
-            "status": "Under Review",
+            "status": "Manual Review Required",
             "model_version": "Dummy_Fallback"
         }
 
