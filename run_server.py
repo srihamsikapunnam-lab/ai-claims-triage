@@ -1,63 +1,39 @@
-import uvicorn
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-import sys
-import os
+#!/usr/bin/env python3
+"""
+Insurance Claims Backend Server
+"""
 
-# Add the current directory to Python path so imports work
-sys.path.insert(0, os.path.dirname(__file__))
+import os
+import sys
+
+# Add the src directory to Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+src_dir = os.path.join(current_dir, 'src')
+sys.path.insert(0, src_dir)
+
+print("📁 Current directory:", current_dir)
+print("📁 Source directory:", src_dir)
+
+# Change to src directory
+os.chdir(src_dir)
+print("📁 Working directory changed to:", os.getcwd())
 
 try:
-    from src.api.model_service import model_service
-    print("✅ Import successful using src.api path")
-except ImportError:
-    try:
-        # Alternative import path
-        from api.model_service import model_service
-        print("✅ Import successful using api path")
-    except ImportError as e:
-        print(f"❌ Import failed: {e}")
-        print("💡 Current directory:", os.getcwd())
-        print("💡 Python path:", sys.path)
-        exit(1)
+    from app import create_app
+    print("✅ Successfully imported app from src directory")
+except ImportError as e:
+    print(f"❌ Import error: {e}")
+    print("📁 Files in src directory:")
+    for file in os.listdir(src_dir):
+        print(f"   - {file}")
+    sys.exit(1)
 
-app = FastAPI(title="Fraud Detection API - Production Ready")
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.post("/predict")
-async def predict(claim_data: dict):
-    print(f"📥 Received prediction request: {claim_data}")
-    result = model_service.predict(claim_data)
-    print(f"📤 Sending prediction: {result['risk_score']} risk score")
-    return result
-
-@app.get("/")
-async def root():
-    return {"message": "Fraud Detection API is running with REAL model!"}
-
-@app.get("/health")
-async def health():
-    return {
-        "status": "healthy", 
-        "model_loaded": model_service.model is not None,
-        "model_type": "RandomForest",
-        "features": model_service.feature_names if model_service.feature_names else None
-    }
-
-if __name__ == "__main__":
-    print("🚀 Starting Fraud Detection API Server...")
-    print("✅ Real RandomForest model loaded!")
-    print("🌐 Server: http://localhost:8000")
-    print("📊 Endpoints:")
-    print("   POST /predict - Make fraud predictions")
-    print("   GET  /health  - Check API status")
-    print("   GET  /        - Welcome message")
-    print("\n🎯 Ready for real predictions!")
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+if __name__ == '__main__':
+    app = create_app()
+    
+    print("🚀 Starting Insurance Claims Backend Server...")
+    print("📍 Server URL: http://localhost:5000")
+    print("❤️  Health Check: http://localhost:5000/health")
+    print("=" * 50)
+    
+    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)

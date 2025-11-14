@@ -1,24 +1,14 @@
-from fastapi import APIRouter, HTTPException, Path
-from .models import ClaimRequest, ClaimResponse, ClaimResult, ClaimDetail
-from .database import save_claim_to_db
-from .model_service import model_service
+from fastapi import APIRouter, HTTPException
+from models import ClaimRequest, ClaimResponse
+from model_service import FraudModelService
 import uuid
 import sqlite3
-import json
-from typing import List
 
 router = APIRouter()
+model_service = FraudModelService()
 
-@router.get('/ping')
-def ping():
-    return {'status': 'ok', 'message': 'Backend is running'}
-
-@router.get('/health')
-async def health_check():
-    return {'status': 'healthy', 'message': 'Backend connected'}
-
-@router.post('/predict', response_model=ClaimResponse)
-def predict_claim(claim: ClaimRequest):
+@router.post("/predict", response_model=ClaimResponse)
+async def predict_claim(claim: ClaimRequest):
     try:
         if not claim.claim_id:
             claim.claim_id = str(uuid.uuid4())
@@ -26,9 +16,40 @@ def predict_claim(claim: ClaimRequest):
         prediction_result = model_service.predict(claim.dict())
         prediction_result['claim_id'] = claim.claim_id
         
-        save_claim_to_db(claim.dict(), prediction_result)
+        # Save to database
+        conn = sqlite3.connect('claims.db')
+        cursor = conn.cursor()
         
+        cursor.execute('''
+            INSERT OR REPLACE INTO claims_raw (claim_id, raw_json)
+            VALUES (?, ?)
+        ''', (claim.claim_id, str(claim.dict())))
+        
+        cursor.execute('''
+            INSERT OR REPLACE INTO claims_results 
+            (claim_id, prediction, probability, risk_score, risk_category, explanation, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            claim.claim_id,
+            prediction_result.get('prediction'),
+            prediction_result.get('probability'),
+            prediction_result.get('risk_score'),
+            prediction_result.get('risk_category'),
+            str(prediction_result.get('explanation', [])),
+            prediction_result.get('status')
+        ))
+        
+        conn.commit()
+        conn.close()
         return ClaimResponse(**prediction_result)
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f'Error processing claim: {str(e)}')
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+@router.get("/ping")
+async def ping():
+    return {"status": "ok", "message": "Backend is running"}
+
+@router.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "Backend connected"}

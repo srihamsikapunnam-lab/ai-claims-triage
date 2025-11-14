@@ -1,0 +1,22 @@
+[
+    {
+        "content": "Sharing credit card information is prohibited",
+        "category": "privacy",
+        "enabled": true
+    },
+    {
+        "content": "Medical diagnosis without license is forbidden",
+        "category": "medical",
+        "enabled": true
+    },
+    {
+        "content": "Hate speech is not allowed",
+        "category": "content",
+        "enabled": true
+    },
+    {
+        "content": "Commercial promotion requires disclosure",
+        "category": "commercial",
+        "enabled": true
+    }
+]

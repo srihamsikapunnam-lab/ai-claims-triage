@@ -5,6 +5,9 @@ from typing import Dict, Any, List
 import logging
 from pathlib import Path
 
+# 🆕 WEEK 4 ANALYTICS: Import analytics service
+from analytics import analytics_service
+
 logger = logging.getLogger(__name__)
 
 class FraudModelService:
@@ -175,6 +178,12 @@ class FraudModelService:
             
             # Convert to risk score (0-100)
             risk_score = int(fraud_probability * 100)
+            
+            # 🆕 WEEK 4 ANALYTICS: Track this prediction for dashboard
+            analytics_service.record_prediction(
+                "Fraud" if fraud_probability > 0.5 else "Legitimate", 
+                risk_score
+            )
             
             # Generate explanations
             explanations = self.generate_explanations(claim_data, fraud_probability)
