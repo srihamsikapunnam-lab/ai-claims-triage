@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useState } from 'react';
 import ClaimsAPI from './services/api';
+import BackendTester from './components/BackendTester';
 import './App.css';
 
 function App() {
@@ -21,6 +22,9 @@ function App() {
       </div>
       
       <h1>Claims Triage System</h1>
+      
+      <BackendTester />
+      
       {/* Your existing form and components will go here later */}
     </div>
   );
