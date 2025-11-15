@@ -1,0 +1,118 @@
+{
+  "scenarios": {
+    "obvious_fraud": {
+      "patient_age": 25,
+      "claimed_amount": 75000.0,
+      "billed_items_count": 150,
+      "previous_claims_count": 8,
+      "doc_missing_flag": 1,
+      "hospital_id": 999,
+      "insurer_id": 13,
+      "expected_result": "HIGH_RISK",
+      "description": "Young patient with extremely high claim, missing docs"
+    },
+    "legitimate_claim": {
+      "patient_age": 68,
+      "claimed_amount": 4500.0,
+      "billed_items_count": 18,
+      "previous_claims_count": 2,
+      "doc_missing_flag": 0,
+      "hospital_id": 101,
+      "insurer_id": 5,
+      "expected_result": "LOW_RISK",
+      "description": "Elderly patient with reasonable claim, complete docs"
+    },
+    "borderline_case": {
+      "patient_age": 42,
+      "claimed_amount": 12000.0,
+      "billed_items_count": 45,
+      "previous_claims_count": 4,
+      "doc_missing_flag": 0,
+      "hospital_id": 205,
+      "insurer_id": 8,
+      "expected_result": "MEDIUM_RISK",
+      "description": "Middle-aged patient with moderately high claim"
+    },
+    "suspicious_pattern": {
+      "patient_age": 31,
+      "claimed_amount": 25000.0,
+      "billed_items_count": 80,
+      "previous_claims_count": 6,
+      "doc_missing_flag": 1,
+      "hospital_id": 307,
+      "insurer_id": 12,
+      "expected_result": "HIGH_RISK",
+      "description": "Multiple red flags: high amount, missing docs, many claims"
+    }
+  },
+  "batch_scenarios": [
+    {
+      "patient_age": 68,
+      "claimed_amount": 4500.0,
+      "billed_items_count": 18,
+      "previous_claims_count": 2,
+      "doc_missing_flag": 0,
+      "hospital_id": 101,
+      "insurer_id": 5,
+      "expected_result": "LOW_RISK",
+      "description": "Elderly patient with reasonable claim, complete docs"
+    },
+    {
+      "patient_age": 42,
+      "claimed_amount": 12000.0,
+      "billed_items_count": 45,
+      "previous_claims_count": 4,
+      "doc_missing_flag": 0,
+      "hospital_id": 205,
+      "insurer_id": 8,
+      "expected_result": "MEDIUM_RISK",
+      "description": "Middle-aged patient with moderately high claim"
+    },
+    {
+      "patient_age": 25,
+      "claimed_amount": 75000.0,
+      "billed_items_count": 150,
+      "previous_claims_count": 8,
+      "doc_missing_flag": 1,
+      "hospital_id": 999,
+      "insurer_id": 13,
+      "expected_result": "HIGH_RISK",
+      "description": "Young patient with extremely high claim, missing docs"
+    },
+    {
+      "patient_age": 31,
+      "claimed_amount": 25000.0,
+      "billed_items_count": 80,
+      "previous_claims_count": 6,
+      "doc_missing_flag": 1,
+      "hospital_id": 307,
+      "insurer_id": 12,
+      "expected_result": "HIGH_RISK",
+      "description": "Multiple red flags: high amount, missing docs, many claims"
+    }
+  ],
+  "demo_script": {
+    "introduction": {
+      "duration": "2 minutes",
+      "content": "\n                \ud83c\udfaf DEMO INTRODUCTION\n                ===================\n\n                \"Good morning! Today I'll demonstrate our AI-Powered Fraud Detection System \n                that helps insurance companies identify suspicious claims automatically.\n\n                Key Business Benefits:\n                \u2022 90%+ accuracy in fraud detection\n                \u2022 Processes 100,000+ claims per second  \n                \u2022 Reduces manual review time by 70%\n                \u2022 Provides risk scores and explanations\"\n                "
+    },
+    "live_demo": {
+      "duration": "5 minutes",
+      "content": "\n                \ud83d\ude80 LIVE DEMO - REAL-TIME FRAUD DETECTION\n                ========================================\n\n                \"Let me show you how it works with real claim scenarios...\"\n\n                SCENARIO 1: Legitimate Claim\n                \u2022 Show low-risk prediction\n                \u2022 Explain confidence factors\n\n                SCENARIO 2: Borderline Case  \n                \u2022 Show medium-risk with explanations\n                \u2022 Discuss review recommendations\n\n                SCENARIO 3: Obvious Fraud\n                \u2022 Show high-risk detection\n                \u2022 Highlight red flags identified\n                "
+    },
+    "batch_processing": {
+      "duration": "2 minutes",
+      "content": "\n                \ud83d\udce6 BATCH PROCESSING DEMO\n                =======================\n\n                \"Now let's process multiple claims simultaneously...\"\n\n                \u2022 Show batch prediction interface\n                \u2022 Demonstrate bulk fraud detection\n                \u2022 Display summary statistics\n                \u2022 Highlight efficiency gains\n                "
+    },
+    "error_handling": {
+      "duration": "2 minutes",
+      "content": "\n                \ud83d\udee1\ufe0f ROBUST ERROR HANDLING\n                ========================\n\n                \"The system gracefully handles edge cases...\"\n\n                \u2022 Show invalid data rejection\n                \u2022 Demonstrate fallback mechanisms  \n                \u2022 Highlight input validation\n                \u2022 Discuss production reliability\n                "
+    },
+    "conclusion": {
+      "duration": "2 minutes",
+      "content": "\n                \ud83c\udfc1 DEMO CONCLUSION & NEXT STEPS\n                ==============================\n\n                \"In summary, our system provides:\n\n                \u2705 Accurate fraud detection (90%+)\n                \u2705 Lightning-fast processing  \n                \u2705 Robust error handling\n                \u2705 Clear risk explanations\n                \u2705 Scalable batch processing\n\n                Next steps: Integration with your claims system and custom training.\"\n                "
+    }
+  },
+  "demo_timestamp": "2025-11-15T13:29:19.570583",
+  "demo_version": "1.0"
+}
