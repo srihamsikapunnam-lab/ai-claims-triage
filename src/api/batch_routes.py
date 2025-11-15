@@ -1,15 +1,26 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import List, Dict, Any
+from pydantic import BaseModel, validator
+from typing import List, Dict, Any, Optional
 import time
 
 router = APIRouter()
 
-# Request model
+# UPDATED Request model - accepts both fields
 class BatchRequest(BaseModel):
-    claims_data: List[Dict[str, Any]]
+    claims_data: Optional[List[Dict[str, Any]]] = None
+    claims: Optional[List[Dict[str, Any]]] = None
+    
+    @validator('claims', always=True)
+    def validate_claims(cls, v, values):
+        """
+        If 'claims' field is provided, use it.
+        Otherwise fall back to 'claims_data'
+        """
+        if v is not None:
+            return v
+        return values.get('claims_data')
 
-# Response model
+# Response model (unchanged)
 class BatchResponse(BaseModel):
     status: str
     message: str
@@ -20,15 +31,17 @@ class BatchResponse(BaseModel):
 async def batch_predict(request: BatchRequest):
     """Process multiple claims in batch - FASTAPI VERSION"""
     try:
-        claims_data = request.claims_data
+        # UPDATED: Get data from either field
+        claims_data = request.claims  # This will contain data from either 'claims' or 'claims_data'
         
         if not claims_data:
-            raise HTTPException(status_code=400, detail="No claims data provided")
+            raise HTTPException(status_code=400, detail="No claims data provided. Use either 'claims' or 'claims_data' field.")
         
         if len(claims_data) > 100:
             raise HTTPException(status_code=400, detail="Too many claims. Maximum 100 per batch.")
         
         print(f"🔄 Processing batch of {len(claims_data)} claims...")
+        print(f"📦 Field used: {'claims' if request.claims else 'claims_data'}")
         
         results = []
         for i, claim in enumerate(claims_data):
@@ -58,6 +71,7 @@ async def batch_predict(request: BatchRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Batch processing failed: {str(e)}")
 
+# The rest of your code remains the same...
 @router.get("/batch/status")
 async def batch_status():
     """Get batch processing system status"""
