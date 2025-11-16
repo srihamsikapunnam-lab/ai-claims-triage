@@ -1,4 +1,5 @@
 ﻿import React, { useEffect, useState } from 'react';
+<<<<<<< HEAD
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/Auth/Login';
@@ -6,6 +7,10 @@ import Register from './components/Auth/Register';
 import ClaimForm from './components/ClaimForm';
 import Dashboard from './components/Dashboard';
 import ClaimDetail from './components/ClaimDetail';
+=======
+import ClaimsAPI from './services/api';
+import BackendTester from './components/BackendTester';
+>>>>>>> 5b062dd277aa485a60ac8b8567e98ee819c1ff61
 import './App.css';
 
 // Main App Component (after authentication)
@@ -39,6 +44,7 @@ function AuthenticatedApp() {
 
   return (
     <div className="App">
+<<<<<<< HEAD
       <header className="App-header">
         <div className="header-content">
           <h1>🏥 Claims Triage System</h1>
@@ -79,6 +85,17 @@ function AuthenticatedApp() {
           </Routes>
         </div>
       </main>
+=======
+      <div style={{padding: '10px', background: '#f0f0f0', marginBottom: '20px'}}>
+        <strong>API Status:</strong> {apiStatus}
+      </div>
+      
+      <h1>Claims Triage System</h1>
+      
+      <BackendTester />
+      
+      {/* Your existing form and components will go here later */}
+>>>>>>> 5b062dd277aa485a60ac8b8567e98ee819c1ff61
     </div>
   );
 }
