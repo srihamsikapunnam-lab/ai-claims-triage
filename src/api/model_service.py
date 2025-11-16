@@ -5,6 +5,13 @@ from typing import Dict, Any, List
 import logging
 from pathlib import Path
 
+# Import xgboost before loading models (needed for unpickling)
+try:
+    import xgboost as xgb
+except ImportError:
+    print("⚠️ XGBoost not installed, model loading may fail")
+    xgb = None
+
 # 🆕 WEEK 4 ANALYTICS: Import analytics service
 from analytics import analytics_service
 
@@ -15,25 +22,51 @@ class FraudModelService:
         self.model = None
         self.feature_names = None
         self.encoders = None
+        self.lime_explainer = None
+        self.model_type = None
         self.model_info = {}
         self.load_model()
     
     def load_model(self):
-        """Load the trained RandomForest model from the API-ready file"""
+        """Load the trained XGBoost model from the API-ready file"""
         try:
+            # Ensure xgboost is imported before unpickling
+            import xgboost
+            
             # Use the API-ready model
             model_path = Path(__file__).parent.parent.parent / "models" / "fraud_model_api_ready.joblib"
             
             if model_path.exists():
                 model_data = joblib.load(model_path)
-                print("✅ API-ready RandomForest model loaded successfully!")
+                print("✅ API-ready model loaded successfully!")
                 
                 # Extract all components
                 self.model = model_data['model']
                 self.feature_names = model_data['feature_names']
                 self.encoders = model_data['encoders']
+                self.model_type = model_data.get('model_type', 'Unknown')
                 
-                print(f"🎯 Model type: RandomForestClassifier")
+                # Recreate LIME explainer if training data is available
+                training_data = model_data.get('training_data')
+                if training_data is not None:
+                    try:
+                        import lime.lime_tabular
+                        self.lime_explainer = lime.lime_tabular.LimeTabularExplainer(
+                            training_data=training_data,
+                            feature_names=self.feature_names,
+                            class_names=['Legitimate', 'Fraud'],
+                            mode='classification',
+                            random_state=42
+                        )
+                        print("🕵️ LIME explainer recreated successfully!")
+                    except Exception as e:
+                        print(f"⚠️ Could not create LIME explainer: {e}")
+                        self.lime_explainer = None
+                else:
+                    self.lime_explainer = None
+                    print("ℹ️  No training data for LIME explainer")
+                
+                print(f"🎯 Model type: {self.model_type}")
                 print(f"📊 Number of features: {len(self.feature_names)}")
                 print(f"📝 Features: {self.feature_names}")
                 print(f"🔧 Encoders: {list(self.encoders.keys())}")
@@ -159,7 +192,7 @@ class FraudModelService:
             raise
     
     def predict(self, claim_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Make real fraud prediction using RandomForest model"""
+        """Make real fraud prediction using XGBoost model with LIME explanations"""
         
         # If model didn't load, fall back to dummy
         if self.model is None:
@@ -167,7 +200,7 @@ class FraudModelService:
             return self._dummy_prediction(claim_data)
         
         try:
-            print("🎯 Making real RandomForest prediction...")
+            print(f"🎯 Making real {self.model_type} prediction...")
             
             # Preprocess the input data
             processed_data = self.preprocess_input(claim_data)
@@ -185,26 +218,52 @@ class FraudModelService:
                 risk_score
             )
             
-            # Generate explanations
-            explanations = self.generate_explanations(claim_data, fraud_probability)
+            # Generate LIME explanations if available
+            lime_explanations = []
+            if self.lime_explainer is not None:
+                try:
+                    instance = processed_data.values[0]
+                    explanation = self.lime_explainer.explain_instance(
+                        instance,
+                        self.model.predict_proba,
+                        num_features=5
+                    )
+                    # Extract feature contributions
+                    for feature, weight in explanation.as_list():
+                        lime_explanations.append({
+                            "feature": feature,
+                            "contribution": round(weight, 4)
+                        })
+                except Exception as e:
+                    print(f"⚠️ LIME explanation generation failed: {str(e)}")
+            
+            # Generate human-readable explanations
+            explanations = self.generate_explanations(claim_data, fraud_probability, lime_explanations)
             
             # FIXED: Intelligent status logic based on both prediction and risk
             if fraud_probability > 0.5:  # If predicted as Fraud
                 if risk_score >= 80:
-                    status = "High Priority Investigation"
+                    status = "under_review"
+                    status_label = "High Priority Investigation"
                 elif risk_score >= 60:
-                    status = "Manual Review Required"
+                    status = "under_review"
+                    status_label = "Manual Review Required"
                 elif risk_score >= 40:
-                    status = "Additional Verification Needed"
+                    status = "under_review"
+                    status_label = "Additional Verification Needed"
                 else:
-                    status = "Flagged for Review"
+                    status = "under_review"
+                    status_label = "Flagged for Review"
             else:  # If predicted as Legitimate
                 if risk_score < 20:
-                    status = "Auto-Approved"
+                    status = "approved"
+                    status_label = "Auto-Approved"
                 elif risk_score < 40:
-                    status = "Fast-Track Approval"
+                    status = "under_review"
+                    status_label = "Fast-Track Approval"
                 else:
-                    status = "Standard Review"
+                    status = "under_review"
+                    status_label = "Standard Review"
             
             response = {
                 "prediction": "Fraud" if fraud_probability > 0.5 else "Legitimate",
@@ -212,12 +271,14 @@ class FraudModelService:
                 "risk_score": risk_score,
                 "risk_category": self.get_risk_category(risk_score),
                 "explanation": explanations,
+                "lime_explanation": lime_explanations,
                 "status": status,
-                "model_version": "RandomForest_Production_v1.1",  # Updated version
+                "status_label": status_label,
+                "model_version": f"{self.model_type}_Production_v2.0",
                 "features_used": self.feature_names
             }
             
-            print(f"📤 Prediction result: Risk Score {risk_score}, Category: {response['risk_category']}, Status: {status}")
+            print(f"📤 Prediction result: Risk Score {risk_score}, Category: {response['risk_category']}, Status: {status_label}")
             return response
             
         except Exception as e:
@@ -225,40 +286,49 @@ class FraudModelService:
             print(f"⚠️ Real model prediction failed: {str(e)}")
             return self._dummy_prediction(claim_data)
     
-    def generate_explanations(self, claim_data: Dict[str, Any], fraud_prob: float) -> List[str]:
-        """Generate 3-line explanation texts based on actual prediction and features"""
+    def generate_explanations(self, claim_data: Dict[str, Any], fraud_prob: float, lime_explanations: List[Dict] = None) -> List[str]:
+        """Generate human-readable explanation texts based on LIME and prediction"""
         explanations = []
         
         claimed_amount = claim_data.get('claimed_amount', claim_data.get('claimed amount', 0))
         length_of_stay = claim_data.get('length_of_stay', 1)
         patient_age = claim_data.get('patient_age', 45)
         
-        # Explanation 1: Based on probability
-        if fraud_prob > 0.8:
-            explanations.append("Very high fraud probability based on historical claim patterns")
-        elif fraud_prob > 0.6:
-            explanations.append("High risk patterns detected in claim characteristics")
-        elif fraud_prob > 0.4:
-            explanations.append("Moderate risk level requiring standard review")
+        # Explanation 1: Based on LIME if available
+        if lime_explanations and len(lime_explanations) > 0:
+            top_feature = lime_explanations[0]
+            feature_name = top_feature['feature']
+            contribution = top_feature['contribution']
+            
+            if contribution > 0:
+                explanations.append(f"Primary risk factor: {feature_name.split('<=')[0].strip()} (contributes +{abs(contribution):.2f} to fraud score)")
+            else:
+                explanations.append(f"Primary legitimate indicator: {feature_name.split('<=')[0].strip()} (reduces fraud score by {abs(contribution):.2f})")
         else:
-            explanations.append("Low risk profile based on claim analysis")
+            # Fallback explanation
+            if fraud_prob > 0.7:
+                explanations.append("Very high fraud probability based on historical claim patterns")
+            elif fraud_prob > 0.5:
+                explanations.append("High risk patterns detected in claim characteristics")
+            elif fraud_prob > 0.3:
+                explanations.append("Moderate risk level requiring standard review")
+            else:
+                explanations.append("Low risk profile based on claim analysis")
         
         # Explanation 2: Based on amount and stay
         if claimed_amount > 15000:
-            explanations.append("Claim amount significantly exceeds typical range for procedure")
+            explanations.append(f"Claim amount (${claimed_amount:,.2f}) significantly exceeds typical range")
         elif claimed_amount > 8000:
-            explanations.append("Above-average claim amount requires verification")
+            explanations.append(f"Above-average claim amount (${claimed_amount:,.2f}) requires verification")
+        else:
+            explanations.append(f"Claim amount (${claimed_amount:,.2f}) within normal range")
         
         if length_of_stay < 2 and claimed_amount > 5000:
-            explanations.append("Short stay with high billing amount detected")
+            explanations.append(f"Short stay ({length_of_stay} days) with high billing detected")
+        elif length_of_stay > 10:
+            explanations.append(f"Extended stay ({length_of_stay} days) flagged for review")
         else:
-            explanations.append("Length of stay within expected range")
-        
-        # Explanation 3: Based on derived features
-        if fraud_prob > 0.7:
-            explanations.append("Multiple risk factors requiring investigation")
-        else:
-            explanations.append("Standard verification process recommended")
+            explanations.append(f"Length of stay ({length_of_stay} days) within expected range")
         
         return explanations[:3]
     
