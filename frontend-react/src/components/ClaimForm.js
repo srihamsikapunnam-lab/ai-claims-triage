@@ -1,34 +1,67 @@
 ﻿import React, { useState } from 'react';
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 71138396a0df518763676a8ae47a59f24518340e
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../utils/apiClient';
 import './ClaimForm.css';
+=======
+import './ClaimForm.css'; // Make sure you have this CSS file
+>>>>>>> 5b062dd277aa485a60ac8b8567e98ee819c1ff61
 
 const ClaimForm = ({ onClaimCreated }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 71138396a0df518763676a8ae47a59f24518340e
     patient_age: '',
     diagnosis: '',
     admission_date: '',
     discharge_date: '',
     claimed_amount: '',
     description: ''
+=======
+    patientName: '',
+    dateOfIncident: '',
+    description: '',
+    claimType: '',
+    amount: ''
+>>>>>>> 5b062dd277aa485a60ac8b8567e98ee819c1ff61
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const handleChange = (e) => {
+<<<<<<< HEAD
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
     setError('');
+<<<<<<< HEAD
+=======
+=======
+    const { name, value } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+>>>>>>> 5b062dd277aa485a60ac8b8567e98ee819c1ff61
+>>>>>>> 71138396a0df518763676a8ae47a59f24518340e
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 71138396a0df518763676a8ae47a59f24518340e
     setIsSubmitting(true);
     setError('');
     setSuccess('');
@@ -117,12 +150,53 @@ const ClaimForm = ({ onClaimCreated }) => {
             type="text"
             name="diagnosis"
             value={formData.diagnosis}
+<<<<<<< HEAD
             onChange={handleChange}
             required
             placeholder="Medical diagnosis or condition"
           />
         </div>
 
+=======
+=======
+    // Add your form submission logic here
+    console.log('Form submitted:', formData);
+    // Add API call for AI review here
+  };
+
+  return (
+    <div className="claim-form-container">
+      <h2>Submit Insurance Claim</h2>
+      <form onSubmit={handleSubmit} className="claim-form">
+        <div className="form-group">
+          <label htmlFor="patientName">Patient Name</label>
+          <input
+            type="text"
+            id="patientName"
+            name="patientName"
+            value={formData.patientName}
+            onChange={handleChange}
+            required
+            placeholder="Enter patient's full name"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="dateOfIncident">Date of Incident</label>
+          <input
+            type="date"
+            id="dateOfIncident"
+            name="dateOfIncident"
+            value={formData.dateOfIncident}
+>>>>>>> 5b062dd277aa485a60ac8b8567e98ee819c1ff61
+            onChange={handleChange}
+            required
+            placeholder="Medical diagnosis or condition"
+          />
+        </div>
+
+<<<<<<< HEAD
+>>>>>>> 71138396a0df518763676a8ae47a59f24518340e
         <div className="form-row">
           <div className="form-group">
             <label>Admission Date *</label>
@@ -145,16 +219,69 @@ const ClaimForm = ({ onClaimCreated }) => {
               required
             />
           </div>
+<<<<<<< HEAD
         </div>
 
         <div className="form-group">
           <label>Additional Details</label>
+=======
+        </div>
+
+        <div className="form-group">
+          <label>Additional Details</label>
+=======
+        <div className="form-group">
+          <label htmlFor="claimType">Claim Type</label>
+          <select
+            id="claimType"
+            name="claimType"
+            value={formData.claimType}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select claim type</option>
+            <option value="medical">Medical Treatment</option>
+            <option value="accident">Accident</option>
+            <option value="property">Property Damage</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="amount">Claim Amount ($)</label>
+          <input
+            type="number"
+            id="amount"
+            name="amount"
+            value={formData.amount}
+            onChange={handleChange}
+            required
+            placeholder="Enter claim amount"
+            min="0"
+            step="0.01"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="description">Incident Description</label>
+>>>>>>> 5b062dd277aa485a60ac8b8567e98ee819c1ff61
+>>>>>>> 71138396a0df518763676a8ae47a59f24518340e
           <textarea
+            id="description"
             name="description"
             value={formData.description}
             onChange={handleChange}
             rows="4"
+<<<<<<< HEAD
             placeholder="Any additional information about the treatment or claim..."
+=======
+<<<<<<< HEAD
+            placeholder="Any additional information about the treatment or claim..."
+=======
+            required
+            placeholder="Describe the incident, treatment, or damages in detail..."
+>>>>>>> 5b062dd277aa485a60ac8b8567e98ee819c1ff61
+>>>>>>> 71138396a0df518763676a8ae47a59f24518340e
           />
         </div>
 

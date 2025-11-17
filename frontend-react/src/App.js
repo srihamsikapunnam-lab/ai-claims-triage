@@ -1,4 +1,16 @@
 ﻿import React, { useEffect, useState } from 'react';
+<<<<<<< HEAD
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Login from './components/Auth/Login';
+import Register from './components/Auth/Register';
+import ClaimForm from './components/ClaimForm';
+import Dashboard from './components/Dashboard';
+import ClaimDetail from './components/ClaimDetail';
+=======
+import ClaimsAPI from './services/api';
+import BackendTester from './components/BackendTester';
+>>>>>>> 5b062dd277aa485a60ac8b8567e98ee819c1ff61
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/Auth/Login';
@@ -12,9 +24,27 @@ import './App.css';
 function AuthenticatedApp() {
   const { user, logout } = useAuth();
   const location = useLocation();
+// Main App Component (after authentication)
+function AuthenticatedApp() {
+  const { user, logout } = useAuth();
+  const location = useLocation();
   const [apiStatus, setApiStatus] = useState('checking...');
 
   useEffect(() => {
+    // Check backend health
+    const checkHealth = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/health');
+        if (response.ok) {
+          setApiStatus('✅ Connected');
+        } else {
+          setApiStatus('❌ Disconnected');
+        }
+      } catch (err) {
+        setApiStatus('❌ Disconnected');
+      }
+    };
+    checkHealth();
     // Check backend health
     const checkHealth = async () => {
       try {
@@ -37,8 +67,66 @@ function AuthenticatedApp() {
 
   const isActive = (path) => location.pathname === path;
 
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const isActive = (path) => location.pathname === path;
+
   return (
     <div className="App">
+<<<<<<< HEAD
+      <header className="App-header">
+        <div className="header-content">
+          <h1>🏥 Claims Triage System</h1>
+          <div className="header-right">
+            <span className="api-status">{apiStatus}</span>
+            <span className="user-info">
+              👤 {user?.full_name} ({user?.role})
+            </span>
+            <button onClick={handleLogout} className="logout-btn">
+              Logout
+            </button>
+          </div>
+        </div>
+
+        <nav className="app-nav">
+          <Link to="/dashboard">
+            <button className={isActive('/dashboard') ? 'active' : ''}>
+              📊 Dashboard
+            </button>
+          </Link>
+          {user?.role === 'customer' && (
+            <Link to="/submit">
+              <button className={isActive('/submit') ? 'active' : ''}>
+                ➕ Submit Claim
+              </button>
+            </Link>
+          )}
+        </nav>
+      </header>
+
+      <main>
+        <div className="page">
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/submit" element={<ClaimForm />} />
+            <Route path="/claims/:claimId" element={<ClaimDetail />} />
+          </Routes>
+        </div>
+      </main>
+=======
+      <div style={{padding: '10px', background: '#f0f0f0', marginBottom: '20px'}}>
+        <strong>API Status:</strong> {apiStatus}
+      </div>
+      
+      <h1>Claims Triage System</h1>
+      
+      <BackendTester />
+      
+      {/* Your existing form and components will go here later */}
+>>>>>>> 5b062dd277aa485a60ac8b8567e98ee819c1ff61
       <header className="App-header">
         <div className="header-content">
           <h1>🏥 Claims Triage System</h1>
@@ -81,6 +169,46 @@ function AuthenticatedApp() {
       </main>
     </div>
   );
+}
+
+// Root App with Auth Check
+function App() {
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+
+  return (
+    <Router>
+      <AuthProvider>
+        <AppContent authMode={authMode} setAuthMode={setAuthMode} />
+      </AuthProvider>
+    </Router>
+  );
+}
+
+function AppContent({ authMode, setAuthMode }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <>
+        {authMode === 'login' ? (
+          <Login onSwitchToRegister={() => setAuthMode('register')} />
+        ) : (
+          <Register onSwitchToLogin={() => setAuthMode('login')} />
+        )}
+      </>
+    );
+  }
+
+  return <AuthenticatedApp />;
 }
 
 // Root App with Auth Check
