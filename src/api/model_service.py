@@ -29,23 +29,41 @@ class FraudModelService:
     
     def load_model(self):
         """Load the trained XGBoost model from the API-ready file"""
-        try:
-            # Ensure xgboost is imported before unpickling
-            import xgboost
-            
-            # Use the API-ready model
-            model_path = Path(__file__).parent.parent.parent / "models" / "fraud_model_api_ready.joblib"
-            
+        # If xgboost is not installed, skip trying to load an XGBoost-based model
+        model_path = Path(__file__).parent.parent.parent / "models" / "fraud_model_api_ready.joblib"
+
+        if xgb is None:
             if model_path.exists():
-                model_data = joblib.load(model_path)
+                print("⚠️ Model file exists but XGBoost is not installed. Skipping model load.")
+            else:
+                print("ℹ️ No model file and XGBoost not installed; running with dummy model")
+            # Keep self.model as None so the service falls back to dummy predictions
+            self.model = None
+            self.lime_explainer = None
+            return
+
+        # xgboost is available; attempt to load the joblib bundle safely
+        try:
+            if model_path.exists():
+                try:
+                    model_data = joblib.load(model_path)
+                except ModuleNotFoundError as e:
+                    print(f"❌ Could not unpickle model (missing dependency): {e}")
+                    self.model = None
+                    return
+                except Exception as e:
+                    print(f"❌ joblib.load failed: {e}")
+                    self.model = None
+                    return
+
                 print("✅ API-ready model loaded successfully!")
-                
+
                 # Extract all components
-                self.model = model_data['model']
-                self.feature_names = model_data['feature_names']
-                self.encoders = model_data['encoders']
+                self.model = model_data.get('model')
+                self.feature_names = model_data.get('feature_names') or []
+                self.encoders = model_data.get('encoders') or {}
                 self.model_type = model_data.get('model_type', 'Unknown')
-                
+
                 # Recreate LIME explainer if training data is available
                 training_data = model_data.get('training_data')
                 if training_data is not None:
@@ -65,16 +83,19 @@ class FraudModelService:
                 else:
                     self.lime_explainer = None
                     print("ℹ️  No training data for LIME explainer")
-                
-                print(f"🎯 Model type: {self.model_type}")
-                print(f"📊 Number of features: {len(self.feature_names)}")
-                print(f"📝 Features: {self.feature_names}")
-                print(f"🔧 Encoders: {list(self.encoders.keys())}")
-                print("✅ Real model ready for production predictions!")
-                
+
+                try:
+                    print(f"🎯 Model type: {self.model_type}")
+                    print(f"📊 Number of features: {len(self.feature_names)}")
+                    print(f"📝 Features: {self.feature_names}")
+                    print(f"🔧 Encoders: {list(self.encoders.keys())}")
+                    print("✅ Real model ready for production predictions!")
+                except Exception:
+                    # Safely ignore any inspection printing errors
+                    pass
             else:
                 print("❌ Model file not found")
-                
+
         except Exception as e:
             print(f"❌ Failed to load model: {str(e)}")
     
@@ -361,5 +382,5 @@ class FraudModelService:
             "model_version": "Dummy_Fallback"
         }
 
-# Global instance
-model_service = FraudModelService()
+# Note: do not create a global instance here to avoid heavy startup-time side-effects.
+# Consumers should explicitly instantiate `FraudModelService()` when needed.

@@ -14,10 +14,16 @@ export const AuthProvider = ({ children }) => {
       if (authService.isAuthenticated()) {
         try {
           const currentUser = await authService.getCurrentUser();
-          setUser(currentUser);
+          if (currentUser) {
+            setUser(currentUser);
+          } else {
+            // Token invalid, clear auth
+            authService.clearAuth();
+          }
         } catch (err) {
           console.error('Auth init error:', err);
           authService.clearAuth();
+          setUser(null);
         }
       }
       setLoading(false);

@@ -29,11 +29,16 @@ class DashboardService {
 
   async getAllClaims(filters = {}) {
     const params = new URLSearchParams();
-    
+
     if (filters.status) params.append('status', filters.status);
     if (filters.risk_category) params.append('risk_category', filters.risk_category);
     if (filters.min_risk_score) params.append('min_risk_score', filters.min_risk_score);
     if (filters.limit) params.append('limit', filters.limit);
+    if (filters.page) params.append('page', filters.page);
+    if (filters.page_size) params.append('page_size', filters.page_size);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.sort_by) params.append('sort_by', filters.sort_by);
+    if (filters.sort_dir) params.append('sort_dir', filters.sort_dir);
 
     const queryString = params.toString();
     const url = `${API_BASE_URL}/api/company/claims${queryString ? '?' + queryString : ''}`;
@@ -57,6 +62,36 @@ class DashboardService {
       console.warn('Company claims failed, trying user claims:', error);
       return await this.getUserClaims();
     }
+  }
+
+  async getApprovalRate(days = 30) {
+    const response = await fetch(`${API_BASE_URL}/api/company/dashboard/approval-rate?days=${days}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch approval rate');
+    return await response.json();
+  }
+
+  async getTotalValue(days = 30) {
+    const response = await fetch(`${API_BASE_URL}/api/company/dashboard/total-value?days=${days}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch total value');
+    return await response.json();
+  }
+
+  async getAvgProcessingTime(days = 90) {
+    const response = await fetch(`${API_BASE_URL}/api/company/dashboard/avg-processing-time?days=${days}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch avg processing time');
+    return await response.json();
   }
 
   async getUserClaims() {
@@ -210,12 +245,13 @@ class DashboardService {
     return {
       id: claim.id,
       status: this.formatStatus(claim.status),
-      risk: Math.round(claim.risk_score || 0),
+      riskScore: Math.round(claim.risk_score || 0),
       date: new Date(claim.created_at).toISOString().split('T')[0],
-      amount: claim.claimed_amount,
-      patient: `Patient ${claim.user_id}`, // Will be enhanced with real patient names
-      type: claim.diagnosis,
-      riskCategory: claim.risk_category || 'Unknown'
+      claimAmount: claim.claimed_amount || claim.claimAmount || 0,
+      patientName: claim.patient_name || claim.full_name || `Patient ${claim.user_id}`,
+      claimType: claim.diagnosis || claim.type || claim.procedure_code || '',
+      riskCategory: claim.risk_category || 'Unknown',
+      documents: claim.documents || []
     };
   }
 
@@ -232,4 +268,5 @@ class DashboardService {
   }
 }
 
-export default new DashboardService();
+const dashboardServiceInstance = new DashboardService();
+export default dashboardServiceInstance;

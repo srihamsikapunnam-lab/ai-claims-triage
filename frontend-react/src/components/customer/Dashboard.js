@@ -113,7 +113,7 @@ const DashboardCustomer = () => {
       case 'recent':
         const recent = [...allClaims]
           .sort((a, b) => new Date(b.date) - new Date(a.date))
-          .slice(0, 20);
+          .slice(0, 5);
         setFilteredClaims(recent);
         break;
       default:
@@ -137,7 +137,7 @@ const DashboardCustomer = () => {
       case 'high-risk':
         return allClaims.filter(c => c.riskScore >= 70).length;
       case 'recent':
-        return Math.min(allClaims.length, 20);
+        return Math.min(allClaims.length, 5);
       default:
         return allClaims.length;
     }
@@ -145,11 +145,11 @@ const DashboardCustomer = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Approved': return '✅';
-      case 'Rejected': return '❌';
-      case 'Flagged': return '🚩';
-      case 'Under Review': return '🔍';
-      default: return '📄';
+      case 'Approved': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle' }}><path d="M20 6 9 17l-5-5" /></svg>;
+      case 'Rejected': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle' }}><path d="M18 6 6 18M6 6l12 12" /></svg>;
+      case 'Flagged': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle' }}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg>;
+      case 'Under Review': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle' }}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>;
+      default: return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg>;
     }
   };
 
@@ -190,6 +190,10 @@ const DashboardCustomer = () => {
   };
 
   const handleClaimClick = (claimId) => {
+    if (!claimId) {
+      console.warn('[Dashboard] handleClaimClick called without id', claimId);
+      return;
+    }
     navigate(`/claims/${claimId}`);
   };
   
@@ -203,9 +207,9 @@ const DashboardCustomer = () => {
 
   const renderClaimCard = (claim) => (
     <div 
-      key={claim.id} 
+      key={claim.id || Math.random()} 
       className="claim-card-new"
-      onClick={() => handleClaimClick(claim.id)}
+      onClick={(e) => { console.log('[Dashboard] card clicked', claim); handleClaimClick(claim.id); }}
     >
       <div className="card-header">
         <div className="claim-id">
@@ -251,6 +255,19 @@ const DashboardCustomer = () => {
         <div className="claim-date">
           {formatDate(claim.date)}
         </div>
+        <div className="card-documents">
+          {claim.documents && claim.documents.length > 0 ? (
+            <div className="doc-summary">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }}>
+                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+              </svg>
+              {claim.documents.length} document{claim.documents.length > 1 ? 's' : ''}
+              {claim.documents[0] && (` — ${claim.documents[0].filename}`)}
+            </div>
+          ) : (
+            <div className="doc-summary empty">No documents</div>
+          )}
+        </div>
         <div className="view-details">
           View Details →
         </div>
@@ -263,25 +280,25 @@ const DashboardCustomer = () => {
       {
         title: 'Total Claims',
         value: statistics.totalClaims.toLocaleString(),
-        icon: '📋',
+        icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '32px', height: '32px' }}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /></svg>,
         color: '#06b6d4'
       },
       {
         title: 'Total Amount',
         value: formatCurrency(statistics.totalAmount),
-        icon: '💰',
+        icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '32px', height: '32px' }}><circle cx="12" cy="12" r="10" /><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" /><path d="M12 18V6" /></svg>,
         color: '#22c55e'
       },
       {
         title: 'Pending',
         value: statistics.pendingCount.toLocaleString(),
-        icon: '⏳',
+        icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '32px', height: '32px' }}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>,
         color: '#f97316'
       },
       {
         title: 'Approved',
         value: statistics.approvedCount.toLocaleString(),
-        icon: '✅',
+        icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '32px', height: '32px' }}><path d="M20 6 9 17l-5-5" /></svg>,
         color: '#10b981'
       },
     ];
@@ -345,7 +362,12 @@ const DashboardCustomer = () => {
     if (filteredClaims.length === 0) {
       return (
         <div className="empty-state">
-          <div className="empty-icon">📄</div>
+          <div className="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '64px', height: '64px' }}>
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <path d="M14 2v6h6" />
+            </svg>
+          </div>
           <h3>No Claims Found</h3>
           <p>
             {activeCategory === 'all' 
@@ -396,7 +418,13 @@ const DashboardCustomer = () => {
       {/* Error Banner */}
       {error && (
         <div className="error-banner-new">
-          <span className="error-icon">⚠️</span>
+          <span className="error-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', height: '20px' }}>
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </span>
           <span className="error-message">
             Failed to load dashboard data: {error}
           </span>

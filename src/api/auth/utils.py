@@ -14,8 +14,30 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""
     # Truncate password to 72 bytes for bcrypt compatibility
     password_bytes = plain_password.encode('utf-8')[:72]
-    hash_bytes = hashed_password.encode('utf-8') if isinstance(hashed_password, str) else hashed_password
-    return bcrypt.checkpw(password_bytes, hash_bytes)
+
+    # If the stored hash looks like a bcrypt hash, attempt bcrypt check
+    try:
+        if isinstance(hashed_password, str):
+            hash_bytes = hashed_password.encode('utf-8')
+        else:
+            hash_bytes = hashed_password
+
+        # bcrypt hashes start with $2b$, $2a$, $2y$, etc.
+        if isinstance(hashed_password, str) and hashed_password.startswith('$2'):
+            return bcrypt.checkpw(password_bytes, hash_bytes)
+        else:
+            # Fallback: support legacy SHA256 salted hashes stored as hex string
+            # Legacy scheme (from older User model): sha256(password + salt)
+            try:
+                salt = "ai_claims_salt_2024"
+                combined = (plain_password + salt).encode('utf-8')
+                legacy_hash = hashlib.sha256(combined).hexdigest()
+                return legacy_hash == (hashed_password if isinstance(hashed_password, str) else hashed_password.decode('utf-8'))
+            except Exception:
+                # As a last resort try bcrypt check (in case hash_bytes is valid)
+                return bcrypt.checkpw(password_bytes, hash_bytes)
+    except Exception:
+        return False
 
 def get_password_hash(password: str) -> str:
     """Generate password hash"""

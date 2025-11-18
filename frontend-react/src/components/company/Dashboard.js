@@ -34,6 +34,11 @@ const DashboardCompany = () => {
   const [filteredClaims, setFilteredClaims] = useState([]);
   const [activeCategory, setActiveCategory] = useState('all');
   
+  // Search & Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('date');
+  const [sortOrder, setSortOrder] = useState('desc');
+  
   // Statistics states
   const [statistics, setStatistics] = useState({
     totalClaims: 0,
@@ -53,13 +58,11 @@ const DashboardCompany = () => {
       setError(null);
       
       try {
-        let claims = [];
-
-        // Company users get all claims
-        claims = await dashboardService.getAllClaims({ limit: 100 });
+        // Company users get all claims (page 1)
+        const rawClaims = await dashboardService.getAllClaims({ page: 1, page_size: 200 });
 
         // Format claims for display
-        const formattedClaims = claims.map(claim => 
+        const formattedClaims = rawClaims.map(claim => 
           dashboardService.formatClaimForDisplay(claim)
         );
 
@@ -79,6 +82,25 @@ const DashboardCompany = () => {
         };
         setStatistics(stats);
         
+        // Fetch backend-calculated metrics
+        try {
+          const [apr, totalVal, avgTime] = await Promise.all([
+            dashboardService.getApprovalRate(),
+            dashboardService.getTotalValue(),
+            dashboardService.getAvgProcessingTime()
+          ]);
+
+          // merge into statistics for display
+          setStatistics(prev => ({
+            ...prev,
+            approvalRate: apr.approval_rate,
+            totalValueBackend: totalVal.total_value,
+            avgProcessingDays: avgTime.avg_days
+          }));
+        } catch (e) {
+          console.warn('Failed to fetch backend metrics', e);
+        }
+        
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError(err.message);
@@ -94,32 +116,71 @@ const DashboardCompany = () => {
     fetchDashboardData();
   }, [user]);
 
-  // Filter claims based on active category
+  // Filter claims based on active category, search, and sort
   useEffect(() => {
+    let filtered = [...allClaims];
+    
+    // Apply category filter
     switch (activeCategory) {
       case 'pending':
-        setFilteredClaims(allClaims.filter(c => 
+        filtered = filtered.filter(c => 
           c.status === 'Under Review' || c.status === 'Pending'
-        ));
+        );
         break;
       case 'approved':
-        setFilteredClaims(allClaims.filter(c => c.status === 'Approved'));
+        filtered = filtered.filter(c => c.status === 'Approved');
         break;
       case 'rejected':
-        setFilteredClaims(allClaims.filter(c => 
+        filtered = filtered.filter(c => 
           c.status === 'Rejected' || c.status === 'Flagged'
-        ));
+        );
         break;
       case 'recent':
-        const recent = [...allClaims]
+        filtered = filtered
           .sort((a, b) => new Date(b.date) - new Date(a.date))
           .slice(0, 20);
-        setFilteredClaims(recent);
         break;
+      case 'all':
       default:
-        setFilteredClaims(allClaims);
+        // Show all claims
+        break;
     }
-  }, [activeCategory, allClaims]);
+    
+    // Apply search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(claim => 
+        claim.id.toLowerCase().includes(term) ||
+        (claim.patientName && claim.patientName.toLowerCase().includes(term)) ||
+        (claim.claimType && claim.claimType.toLowerCase().includes(term)) ||
+        claim.status.toLowerCase().includes(term)
+      );
+    }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.date) - new Date(b.date);
+          break;
+        case 'amount':
+          comparison = (a.claimAmount || 0) - (b.claimAmount || 0);
+          break;
+        case 'risk':
+          comparison = (a.riskScore || 0) - (b.riskScore || 0);
+          break;
+        case 'status':
+          comparison = a.status.localeCompare(b.status);
+          break;
+        default:
+          comparison = 0;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+    
+    setFilteredClaims(filtered);
+  }, [activeCategory, allClaims, searchTerm, sortBy, sortOrder]);
 
   // Helper functions
   const getCategoryCount = (category) => {
@@ -145,11 +206,11 @@ const DashboardCompany = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Approved': return '✅';
-      case 'Rejected': return '❌';
-      case 'Flagged': return '🚩';
-      case 'Under Review': return '🔍';
-      default: return '📄';
+      case 'Approved': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle' }}><path d="M20 6 9 17l-5-5" /></svg>;
+      case 'Rejected': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle' }}><path d="M18 6 6 18M6 6l12 12" /></svg>;
+      case 'Flagged': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle' }}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg>;
+      case 'Under Review': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle' }}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>;
+      default: return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg>;
     }
   };
 
@@ -193,9 +254,7 @@ const DashboardCompany = () => {
     navigate(`/claims/${claimId}`);
   };
   
-  const handleNewClaim = () => {
-    navigate('/submit');
-  };
+
 
   const handleRetry = () => {
     window.location.reload();
@@ -263,25 +322,25 @@ const DashboardCompany = () => {
       {
         title: 'Total Claims',
         value: statistics.totalClaims.toLocaleString(),
-        icon: '📋',
+        icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '32px', height: '32px' }}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /></svg>,
         color: '#06b6d4'
       },
       {
         title: 'Total Amount',
         value: formatCurrency(statistics.totalAmount),
-        icon: '💰',
+        icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '32px', height: '32px' }}><circle cx="12" cy="12" r="10" /><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" /><path d="M12 18V6" /></svg>,
         color: '#22c55e'
       },
       {
         title: 'Pending',
         value: statistics.pendingCount.toLocaleString(),
-        icon: '⏳',
+        icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '32px', height: '32px' }}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>,
         color: '#f97316'
       },
       {
         title: 'Approved',
         value: statistics.approvedCount.toLocaleString(),
-        icon: '✅',
+        icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '32px', height: '32px' }}><path d="M20 6 9 17l-5-5" /></svg>,
         color: '#10b981'
       },
     ];
@@ -301,6 +360,41 @@ const DashboardCompany = () => {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderSearchAndFilters = () => {
+    return (
+      <div className="search-filter-section">
+        <div className="search-box">
+          <input
+            type="text"
+            placeholder="Search by ID, patient name, or status..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
+        <div className="filter-controls">
+          <select 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value)}
+            className="sort-select"
+          >
+            <option value="date">Sort by Date</option>
+            <option value="amount">Sort by Amount</option>
+            <option value="risk">Sort by Risk Score</option>
+            <option value="status">Sort by Status</option>
+          </select>
+          <button 
+            className="sort-order-btn"
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+          >
+            {sortOrder === 'asc' ? '↑' : '↓'}
+          </button>
         </div>
       </div>
     );
@@ -345,20 +439,25 @@ const DashboardCompany = () => {
     if (filteredClaims.length === 0) {
       return (
         <div className="empty-state">
-          <div className="empty-icon">📄</div>
+          <div className="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '64px', height: '64px' }}>
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <path d="M14 2v6h6" />
+            </svg>
+          </div>
           <h3>No Claims Found</h3>
           <p>
             {activeCategory === 'all' 
-              ? "You don't have any claims yet." 
+              ? "No claims available." 
               : `No claims found in the ${activeCategory} category.`
             }
           </p>
           {activeCategory === 'all' && (
             <button 
               className="btn-submit-claim"
-              onClick={handleNewClaim}
+              onClick={() => navigate('/submit')}
             >
-              Submit Your First Claim
+              View All Claims
             </button>
           )}
         </div>
@@ -383,20 +482,19 @@ const DashboardCompany = () => {
           </p>
         </div>
         <div className="header-actions">
-          <button 
-            className="btn-primary-new"
-            onClick={handleNewClaim}
-          >
-            <span className="btn-icon">+</span>
-            New Claim
-          </button>
         </div>
       </div>
 
       {/* Error Banner */}
       {error && (
         <div className="error-banner-new">
-          <span className="error-icon">⚠️</span>
+          <span className="error-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', height: '20px' }}>
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </span>
           <span className="error-message">
             Failed to load dashboard data: {error}
           </span>
@@ -408,6 +506,9 @@ const DashboardCompany = () => {
 
       {/* Statistics Overview */}
       {!loading && !error && renderStatistics()}
+
+      {/* Search and Filters */}
+      {!loading && !error && renderSearchAndFilters()}
 
       {/* Category Navigation */}
       {renderCategoryNav()}

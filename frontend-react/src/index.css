@@ -1,3 +1,16 @@
+/* Global Theme Variables */
+:root {
+  --bg-dark-blue: #0f172a;
+  --bg-medium-blue: #1e293b;
+  --bg-light-blue: #334155;
+  --border-blue: #475569;
+  --text-gray: #cbd5e1;
+  --text-light-gray: #94a3b8;
+  --accent-cyan: #22d3ee;
+  --accent-cyan-light: #67e8f9;
+  --accent-teal: #06b6d4;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -5,6 +18,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-dark-blue);
+  color: white;
 }
 
 code {

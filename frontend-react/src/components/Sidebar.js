@@ -19,25 +19,25 @@ const Sidebar = () => {
 
   const menuItems = [
     {
-      icon: '📊',
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', height: '20px' }}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>,
       label: 'Dashboard',
       path: '/dashboard',
       roles: ['customer', 'company_admin', 'company_staff']
     },
     {
-      icon: '➕',
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', height: '20px' }}><path d="M12 5v14M5 12h14" /></svg>,
       label: 'Submit Claim',
       path: '/submit',
       roles: ['customer']
     },
     {
-      icon: '📋',
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', height: '20px' }}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /></svg>,
       label: 'All Claims',
       path: '/claims',
       roles: ['company_admin', 'company_staff']
     },
     {
-      icon: '📈',
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', height: '20px' }}><path d="M3 3v18h18" /><path d="M18 17V9M13 17V5M8 17v-3" /></svg>,
       label: 'Analytics',
       path: '/analytics',
       roles: ['company_admin', 'company_staff']
@@ -46,17 +46,9 @@ const Sidebar = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  const handleMouseEnter = () => {
-    if (window.innerWidth > 768) {
-      setIsExpanded(true);
-    }
-  };
+
   
-  const handleMouseLeave = () => {
-    if (window.innerWidth > 768) {
-      setIsExpanded(false);
-    }
-  };
+
   
   const handleNavigation = (path) => {
     navigate(path);
@@ -79,7 +71,17 @@ const Sidebar = () => {
         {/* Logo Section */}
         <div className="sidebar-header">
           <div className="logo-container">
-            <span className="logo-icon">🏥</span>
+            <span className="logo-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '24px', height: '24px' }}>
+                <path d="M3 21h18" />
+                <path d="M5 21V7l8-4v18" />
+                <path d="M19 21V11l-6-4" />
+                <path d="M9 9v.01" />
+                <path d="M9 12v.01" />
+                <path d="M9 15v.01" />
+                <path d="M9 18v.01" />
+              </svg>
+            </span>
             {isExpanded && (
               <span className="logo-text">Claims Triage</span>
             )}
@@ -107,7 +109,12 @@ const Sidebar = () => {
         <div className="sidebar-footer">
           <div className="user-section">
             <div className="user-avatar">
-              <span className="avatar-icon">👤</span>
+              <span className="avatar-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '24px', height: '24px' }}>
+                  <circle cx="12" cy="8" r="5" />
+                  <path d="M20 21a8 8 0 1 0-16 0" />
+                </svg>
+              </span>
             </div>
             {isExpanded && (
               <div className="user-info">
@@ -122,7 +129,13 @@ const Sidebar = () => {
             onClick={logout}
             title={!isExpanded ? 'Logout' : ''}
           >
-            <span className="logout-icon">🚪</span>
+            <span className="logout-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', height: '20px' }}>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </span>
             {isExpanded && (
               <span className="logout-label">Logout</span>
             )}

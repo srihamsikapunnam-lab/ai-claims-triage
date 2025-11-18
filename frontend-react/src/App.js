@@ -10,6 +10,8 @@ import CustomerClaimForm from './components/customer/ClaimForm';
 import CompanyClaimForm from './components/company/ClaimForm';
 import CustomerDashboard from './components/customer/Dashboard';
 import CompanyDashboard from './components/company/Dashboard';
+import CompanyAllClaims from './components/company/AllClaims';
+import CompanyAnalytics from './components/company/Analytics';
 import Sidebar from './components/Sidebar';
 import CustomerClaimDetail from './components/customer/ClaimDetail';
 import CompanyClaimDetail from './components/company/ClaimDetail';
@@ -36,6 +38,12 @@ function AuthenticatedApp() {
           <Route path="/dashboard" element={<DashboardToRender />} />
           <Route path="/submit" element={<ClaimFormToRender />} />
           <Route path="/claims/:claimId" element={<ClaimDetailToRender />} />
+          {isCompanyStaff && (
+            <>
+              <Route path="/claims" element={<CompanyAllClaims />} />
+              <Route path="/analytics" element={<CompanyAnalytics />} />
+            </>
+          )}
         </Routes>
       </main>
     </div>

@@ -54,7 +54,12 @@ const AdminLogin = () => {
           </button>
         </div>
         
-        <h2>⚡ Admin Login</h2>
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '24px', height: '24px', display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }}>
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+          Admin Login
+        </h2>
         <p className="auth-subtitle">Access the claims management dashboard</p>
 
         {(localError || error) && (

@@ -43,6 +43,7 @@ class ClaimResponse(BaseModel):
     prediction: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    documents: Optional[List[dict]] = []
 
     class Config:
         from_attributes = True

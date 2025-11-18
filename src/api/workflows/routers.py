@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 import sys
 import os
@@ -148,6 +148,126 @@ async def create_claim(
     finally:
         conn.close()
 
+
+@router.get('/company/dashboard/approval-rate')
+async def get_approval_rate(
+    days: int = 30,
+    current_user: TokenData = Depends(require_role(["company_admin", "company_staff"]))
+):
+    """Return approval rate for the last `days` and comparison to previous period"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        end = datetime.utcnow()
+        start = end - timedelta(days=days)
+        prev_start = start - timedelta(days=days)
+        prev_end = start
+
+        # Current period
+        cursor.execute("SELECT COUNT(*) FROM claims WHERE created_at >= ? AND created_at <= ?", (start, end))
+        total = cursor.fetchone()[0] or 0
+        cursor.execute("SELECT COUNT(*) FROM claims WHERE status = 'approved' AND created_at >= ? AND created_at <= ?", (start, end))
+        approved = cursor.fetchone()[0] or 0
+
+        # Previous period
+        cursor.execute("SELECT COUNT(*) FROM claims WHERE created_at >= ? AND created_at < ?", (prev_start, prev_end))
+        prev_total = cursor.fetchone()[0] or 0
+        cursor.execute("SELECT COUNT(*) FROM claims WHERE status = 'approved' AND created_at >= ? AND created_at < ?", (prev_start, prev_end))
+        prev_approved = cursor.fetchone()[0] or 0
+
+        approval_rate = (approved / total * 100) if total > 0 else 0
+        prev_rate = (prev_approved / prev_total * 100) if prev_total > 0 else 0
+
+        trend = approval_rate - prev_rate
+
+        return {
+            "approval_rate": round(approval_rate, 2),
+            "previous_rate": round(prev_rate, 2),
+            "trend": round(trend, 2),
+            "total": total
+        }
+    finally:
+        conn.close()
+
+
+@router.get('/company/dashboard/total-value')
+async def get_total_value(
+    days: int = 30,
+    current_user: TokenData = Depends(require_role(["company_admin", "company_staff"]))
+):
+    """Return total claimed value for the last `days` and comparison to previous period"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        end = datetime.utcnow()
+        start = end - timedelta(days=days)
+        prev_start = start - timedelta(days=days)
+        prev_end = start
+
+        cursor.execute("SELECT SUM(claimed_amount) FROM claims WHERE created_at >= ? AND created_at <= ?", (start, end))
+        total_value = cursor.fetchone()[0] or 0
+
+        cursor.execute("SELECT SUM(claimed_amount) FROM claims WHERE created_at >= ? AND created_at < ?", (prev_start, prev_end))
+        prev_value = cursor.fetchone()[0] or 0
+
+        trend = total_value - prev_value
+
+        return {
+            "total_value": round(total_value, 2),
+            "previous_value": round(prev_value, 2),
+            "trend": round(trend, 2)
+        }
+    finally:
+        conn.close()
+
+
+@router.get('/company/dashboard/avg-processing-time')
+async def get_avg_processing_time(
+    days: int = 90,
+    current_user: TokenData = Depends(require_role(["company_admin", "company_staff"]))
+):
+    """Average days from submission to final decision (approved/rejected) for last `days` and comparison"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        end = datetime.utcnow()
+        start = end - timedelta(days=days)
+        prev_start = start - timedelta(days=days)
+        prev_end = start
+
+        # Current period - only claims that reached final status
+        cursor.execute("""
+            SELECT AVG( (julianday(h.changed_at) - julianday(c.created_at)) ) * 24 * 60 * 60
+            FROM claim_status_history h
+            JOIN claims c ON h.claim_id = c.id
+            WHERE h.status IN ('approved','rejected')
+              AND h.changed_at >= ? AND h.changed_at <= ?
+        """, (start, end))
+        avg_seconds = cursor.fetchone()[0] or 0
+
+        cursor.execute("""
+            SELECT AVG( (julianday(h.changed_at) - julianday(c.created_at)) ) * 24 * 60 * 60
+            FROM claim_status_history h
+            JOIN claims c ON h.claim_id = c.id
+            WHERE h.status IN ('approved','rejected')
+              AND h.changed_at >= ? AND h.changed_at < ?
+        """, (prev_start, prev_end))
+        prev_avg_seconds = cursor.fetchone()[0] or 0
+
+        # Convert seconds to days
+        avg_days = (avg_seconds / (60 * 60 * 24)) if avg_seconds else 0
+        prev_avg_days = (prev_avg_seconds / (60 * 60 * 24)) if prev_avg_seconds else 0
+
+        trend = avg_days - prev_avg_days
+
+        return {
+            "avg_days": round(avg_days, 2),
+            "previous_avg_days": round(prev_avg_days, 2),
+            "trend": round(trend, 2)
+        }
+    finally:
+        conn.close()
+
 @router.get("/claims", response_model=List[ClaimResponse])
 async def get_user_claims(
     current_user: TokenData = Depends(get_current_user)
@@ -167,9 +287,31 @@ async def get_user_claims(
         """, (current_user.user_id,))
         
         claims = cursor.fetchall()
-        
-        return [
-            ClaimResponse(
+        results = []
+        for claim in claims:
+            claim_id = claim[0]
+            # Fetch documents for this claim from documents table
+            cursor.execute("""
+                SELECT id, filename, filepath, document_type, file_size, uploaded_by, uploaded_at, description
+                FROM documents WHERE claim_id = ?
+                ORDER BY uploaded_at DESC
+            """, (claim_id,))
+            docs = cursor.fetchall()
+            documents = [
+                {
+                    "id": d[0],
+                    "filename": d[1],
+                    "filepath": d[2],
+                    "document_type": d[3],
+                    "file_size": d[4],
+                    "uploaded_by": d[5],
+                    "uploaded_at": d[6],
+                    "description": d[7]
+                }
+                for d in docs
+            ]
+
+            results.append(ClaimResponse(
                 id=claim[0],
                 user_id=claim[1],
                 status=claim[2],
@@ -181,10 +323,11 @@ async def get_user_claims(
                 risk_category=claim[8],
                 prediction=claim[9],
                 created_at=claim[10],
-                updated_at=claim[11]
-            )
-            for claim in claims
-        ]
+                updated_at=claim[11],
+                documents=documents
+            ))
+
+        return results
         
     finally:
         conn.close()
@@ -262,6 +405,26 @@ async def get_claim_detail(
             lime_explanation_list = json.loads(claim[14]) if claim[14] else []
         except:
             lime_explanation_list = []
+        # Fetch attached documents for this claim
+        cursor.execute("""
+            SELECT id, filename, filepath, document_type, file_size, uploaded_by, uploaded_at, description
+            FROM documents WHERE claim_id = ?
+            ORDER BY uploaded_at DESC
+        """, (claim_id,))
+        docs = cursor.fetchall()
+        documents = [
+            {
+                "id": d[0],
+                "filename": d[1],
+                "filepath": d[2],
+                "document_type": d[3],
+                "file_size": d[4],
+                "uploaded_by": d[5],
+                "uploaded_at": d[6],
+                "description": d[7]
+            }
+            for d in docs
+        ]
         
         return ClaimDetailResponse(
             id=claim[0],
@@ -284,7 +447,8 @@ async def get_claim_detail(
             created_at=claim[17],
             updated_at=claim[18],
             full_name=claim[19],
-            status_history=status_history
+            status_history=status_history,
+            documents=documents
         )
         
     finally:
@@ -427,6 +591,11 @@ async def get_all_claims(
     risk_category: Optional[str] = Query(None),
     min_risk_score: Optional[float] = Query(None),
     limit: int = Query(100, le=1000),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=1000),
+    search: Optional[str] = Query(None),
+    sort_by: Optional[str] = Query('created_at'),
+    sort_dir: Optional[str] = Query('desc'),
     current_user: TokenData = Depends(require_role(["company_admin", "company_staff"]))
 ):
     """Get all claims with filters (company staff only)"""
@@ -434,35 +603,73 @@ async def get_all_claims(
     cursor = conn.cursor()
     
     try:
-        query = """
-            SELECT id, user_id, status, current_stage, patient_age, diagnosis,
-                   claimed_amount, risk_score, risk_category, prediction,
-                   created_at, updated_at
-            FROM claims
-            WHERE 1=1
-        """
+        # Base query with optional join to users for searching by name
+        base_select = "SELECT c.id, c.user_id, c.status, c.current_stage, c.patient_age, c.diagnosis, c.claimed_amount, c.risk_score, c.risk_category, c.prediction, c.created_at, c.updated_at"
+        base_from = " FROM claims c"
         params = []
+
+        if search:
+            base_from += " LEFT JOIN users u ON c.user_id = u.id"
+
+        query = base_select + base_from + " WHERE 1=1"
         
         if status:
-            query += " AND status = ?"
+            query += " AND c.status = ?"
             params.append(status)
         
         if risk_category:
-            query += " AND risk_category = ?"
+            query += " AND c.risk_category = ?"
             params.append(risk_category)
         
         if min_risk_score is not None:
-            query += " AND risk_score >= ?"
+            query += " AND c.risk_score >= ?"
             params.append(min_risk_score)
+
+        if search:
+            # search by claim id or user full_name
+            query += " AND (c.id LIKE ? OR u.full_name LIKE ? )"
+            term = f"%{search}%"
+            params.extend([term, term])
         
-        query += " ORDER BY created_at DESC LIMIT ?"
-        params.append(limit)
+        # Sorting
+        allowed_sorts = {'created_at': 'c.created_at', 'claimed_amount': 'c.claimed_amount', 'risk_score': 'c.risk_score'}
+        sort_col = allowed_sorts.get(sort_by, 'c.created_at')
+        sort_direction = 'ASC' if sort_dir.lower() == 'asc' else 'DESC'
+
+        # Pagination: compute LIMIT and OFFSET
+        page_size = min(max(1, page_size), 1000)
+        offset = (max(1, page) - 1) * page_size
+
+        query += f" ORDER BY {sort_col} {sort_direction} LIMIT ? OFFSET ?"
+        params.append(page_size)
+        params.append(offset)
         
         cursor.execute(query, params)
         claims = cursor.fetchall()
-        
-        return [
-            ClaimResponse(
+        results = []
+        for claim in claims:
+            claim_id = claim[0]
+            cursor.execute("""
+                SELECT id, filename, filepath, document_type, file_size, uploaded_by, uploaded_at, description
+                FROM documents WHERE claim_id = ?
+                ORDER BY uploaded_at DESC
+            """, (claim_id,))
+            docs = cursor.fetchall()
+            documents = [
+                {
+                    "id": d[0],
+                    "filename": d[1],
+                    "filepath": d[2],
+                    "document_type": d[3],
+                    "file_size": d[4],
+                    "uploaded_by": d[5],
+                    "uploaded_at": d[6],
+                    "description": d[7]
+                }
+                for d in docs
+            ]
+
+            results.append(ClaimResponse(
                 id=claim[0],
                 user_id=claim[1],
                 status=claim[2],
@@ -474,10 +681,11 @@ async def get_all_claims(
                 risk_category=claim[8],
                 prediction=claim[9],
                 created_at=claim[10],
-                updated_at=claim[11]
-            )
-            for claim in claims
-        ]
+                updated_at=claim[11],
+                documents=documents
+            ))
+
+        return results
         
     finally:
         conn.close()
