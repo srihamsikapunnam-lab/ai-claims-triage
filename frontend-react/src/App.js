@@ -6,6 +6,7 @@ import Register from './components/Auth/Register';
 import ClaimForm from './components/ClaimForm';
 import Dashboard from './components/Dashboard';
 import ClaimDetail from './components/ClaimDetail';
+import Chatbot from './components/Chatbot/Chatbot';
 import './App.css';
 
 // Main App Component (after authentication)
@@ -79,6 +80,9 @@ function AuthenticatedApp() {
           </Routes>
         </div>
       </main>
+
+      {/* AI Chatbot - Always Available */}
+      <Chatbot />
     </div>
   );
 }
