@@ -11,9 +11,10 @@ app = FastAPI(
     description="Medical Insurance Fraud Detection with Authentication & Workflow"
 )
 
-# Enable CORS - Must be configured before routes
+# Enable CORS - Must be configured before routes - FIXED FOR PRODUCTION
 app.add_middleware(
     CORSMiddleware,
+<<<<<<< HEAD
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
@@ -21,6 +22,9 @@ app.add_middleware(
         "https://ai-claims.netlify.app",  # Production frontend
         "https://*.netlify.app",  # Netlify preview deployments
     ],
+=======
+    allow_origins=["*"],  # Allow ALL origins - fixes deployment issue
+>>>>>>> aab63b9b1f43c0df9e300c580d2c3fd052647a39
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
