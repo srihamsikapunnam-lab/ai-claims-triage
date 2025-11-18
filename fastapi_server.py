@@ -11,14 +11,10 @@ app = FastAPI(
     description="Medical Insurance Fraud Detection with Authentication & Workflow"
 )
 
-# Enable CORS - Must be configured before routes
+# Enable CORS - Must be configured before routes - FIXED FOR PRODUCTION
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-    ],
+    allow_origins=["*"],  # Allow ALL origins - fixes deployment issue
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
