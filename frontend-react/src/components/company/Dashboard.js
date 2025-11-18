@@ -76,9 +76,15 @@ const DashboardCompany = () => {
           pendingCount: formattedClaims.filter(c => c.status === 'Under Review' || c.status === 'Pending').length,
           approvedCount: formattedClaims.filter(c => c.status === 'Approved').length,
           rejectedCount: formattedClaims.filter(c => c.status === 'Rejected' || c.status === 'Flagged').length,
-          highRiskCount: formattedClaims.filter(c => c.riskScore >= 70).length,
+          highRiskCount: formattedClaims.filter(c => {
+            const score = c.riskScore < 1 ? c.riskScore * 100 : c.riskScore;
+            return score >= 70;
+          }).length,
           averageRiskScore: formattedClaims.length > 0 ? 
-            Math.round(formattedClaims.reduce((sum, claim) => sum + (claim.riskScore || 0), 0) / formattedClaims.length) : 0
+            Math.round(formattedClaims.reduce((sum, claim) => {
+              const score = claim.riskScore < 1 ? claim.riskScore * 100 : claim.riskScore;
+              return sum + score;
+            }, 0) / formattedClaims.length) : 0
         };
         setStatistics(stats);
         
@@ -230,6 +236,27 @@ const DashboardCompany = () => {
     return 'risk-low';
   };
 
+  // Helper to get expected status based on risk score
+  const getExpectedStatus = (riskScore) => {
+    const normalizedScore = riskScore < 1 ? riskScore * 100 : riskScore;
+    if (normalizedScore >= 70) return 'flagged';
+    return 'submitted';
+  };
+
+  // Helper to validate if status matches risk score
+  const isStatusInconsistent = (claim) => {
+    const normalizedScore = claim.riskScore < 1 ? claim.riskScore * 100 : claim.riskScore;
+    const expectedStatus = getExpectedStatus(normalizedScore);
+    const actualStatus = claim.status.toLowerCase();
+    
+    // Flagged status should only appear for high risk (>=70%)
+    if (actualStatus === 'flagged' && normalizedScore < 70) return true;
+    // High risk should be flagged, not approved
+    if (actualStatus === 'approved' && normalizedScore >= 70) return true;
+    
+    return false;
+  };
+
   const formatCurrency = (amount) => {
     const num = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.-]+/g, '')) : amount;
     try {
@@ -296,12 +323,15 @@ const DashboardCompany = () => {
         >
           <span>{getStatusIcon(claim.status)}</span>
           {claim.status}
+          {isStatusInconsistent(claim) && (
+            <span title="Status doesn't match risk score" style={{ marginLeft: '4px', fontSize: '14px' }}>⚠️</span>
+          )}
         </div>
         
         <div className="risk-info">
           <div className="risk-label">Risk Score</div>
-          <div className={`risk-score-small ${getRiskClass(claim.riskScore)}`}>
-            {claim.riskScore}%
+          <div className={`risk-score-small ${getRiskClass(claim.riskScore < 1 ? claim.riskScore * 100 : claim.riskScore)}`}>
+            {Math.round(claim.riskScore < 1 ? claim.riskScore * 100 : claim.riskScore)}%
           </div>
         </div>
       </div>

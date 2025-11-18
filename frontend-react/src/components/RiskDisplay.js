@@ -2,13 +2,17 @@ import React from 'react';
 import './RiskDisplay.css';
 
 const RiskDisplay = ({ riskScore = 65, claimId = "CLM-2024-001" }) => {
+  // Normalize risk score: if it's between 0-1, convert to percentage
+  const normalizedScore = riskScore < 1 ? Math.round(riskScore * 100) : Math.round(riskScore);
+  
   const getRiskLevel = (score) => {
+    // Use normalized score for thresholds
     if (score < 30) return { level: "Low", color: "#28a745", emoji: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#28a745" style={{ width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /></svg> };
     if (score < 70) return { level: "Medium", color: "#ffc107", emoji: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ffc107" style={{ width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /></svg> };
     return { level: "High", color: "#dc3545", emoji: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#dc3545" style={{ width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /></svg> };
   };
 
-  const riskInfo = getRiskLevel(riskScore);
+  const riskInfo = getRiskLevel(normalizedScore);
 
   return (
     <div className="risk-display">
@@ -23,7 +27,7 @@ const RiskDisplay = ({ riskScore = 65, claimId = "CLM-2024-001" }) => {
       <div className="risk-card">
         <div className="risk-score">
           <div className="score-circle" style={{ borderColor: riskInfo.color }}>
-            <span style={{ color: riskInfo.color }}>{riskScore}</span>
+            <span style={{ color: riskInfo.color }}>{normalizedScore}</span>
           </div>
           <div className="risk-level">
             <span className="level-badge" style={{ backgroundColor: riskInfo.color }}>
@@ -38,13 +42,24 @@ const RiskDisplay = ({ riskScore = 65, claimId = "CLM-2024-001" }) => {
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
             </svg>
-            Key Risk Factors:
+            {normalizedScore < 30 ? "Key Trust Indicators:" : "Key Risk Factors:"}
           </h4>
           <ul>
-            <li>Claim amount higher than policy average</li>
-            <li>Multiple claims from same provider</li>
-            <li>Unusual billing patterns detected</li>
-            <li>Geographic inconsistency in service location</li>
+            {normalizedScore < 30 ? (
+              <>
+                <li>Claim amount within policy average</li>
+                <li>Consistent billing history from provider</li>
+                <li>Standard billing patterns observed</li>
+                <li>Service location matches patient profile</li>
+              </>
+            ) : (
+              <>
+                <li>Claim amount higher than policy average</li>
+                <li>Multiple claims from same provider</li>
+                <li>Unusual billing patterns detected</li>
+                <li>Geographic inconsistency in service location</li>
+              </>
+            )}
           </ul>
         </div>
 
@@ -57,8 +72,8 @@ const RiskDisplay = ({ riskScore = 65, claimId = "CLM-2024-001" }) => {
             Recommendation:
           </h4>
           <p>
-            {riskScore < 30 ? "Auto-approve claim" : 
-             riskScore < 70 ? "Schedule for manual review" : 
+            {normalizedScore < 30 ? "Auto-approve claim" : 
+             normalizedScore < 70 ? "Schedule for manual review" : 
              "Flag for immediate investigation"}
           </p>
         </div>

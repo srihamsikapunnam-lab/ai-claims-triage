@@ -518,6 +518,8 @@
   font-weight: 800;
   color: white;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .card-body {
@@ -576,6 +578,13 @@
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   color: white;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+  text-align: center;
 }
 
 .risk-score-small.risk-low { background: #10b981; }

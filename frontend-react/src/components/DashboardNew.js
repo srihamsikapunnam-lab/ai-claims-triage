@@ -102,7 +102,10 @@ const Dashboard = () => {
           c.status === 'Rejected' || c.status === 'Flagged'
         ).length;
       case 'high-risk':
-        return allClaims.filter(c => c.riskScore >= 70).length;
+        return allClaims.filter(c => {
+          const score = c.riskScore < 1 ? c.riskScore * 100 : c.riskScore;
+          return score >= 70;
+        }).length;
       case 'recent':
         return Math.min(allClaims.length, 20);
       default:
@@ -131,9 +134,32 @@ const Dashboard = () => {
   };
 
   const getRiskClass = (score) => {
-    if (score >= 70) return 'risk-high';
-    if (score >= 40) return 'risk-medium';
+    // Normalize score if it's in 0-1 range
+    const normalizedScore = score < 1 ? score * 100 : score;
+    if (normalizedScore >= 70) return 'risk-high';
+    if (normalizedScore >= 40) return 'risk-medium';
     return 'risk-low';
+  };
+
+  // Helper to get expected status based on risk score
+  const getExpectedStatus = (riskScore) => {
+    const normalizedScore = riskScore < 1 ? riskScore * 100 : riskScore;
+    if (normalizedScore >= 70) return 'flagged';
+    return 'submitted';
+  };
+
+  // Helper to validate if status matches risk score
+  const isStatusInconsistent = (claim) => {
+    const normalizedScore = claim.riskScore < 1 ? claim.riskScore * 100 : claim.riskScore;
+    const expectedStatus = getExpectedStatus(normalizedScore);
+    const actualStatus = claim.status.toLowerCase();
+    
+    // Flagged status should only appear for high risk (>=70%)
+    if (actualStatus === 'flagged' && normalizedScore < 70) return true;
+    // High risk should be flagged, not approved
+    if (actualStatus === 'approved' && normalizedScore >= 70) return true;
+    
+    return false;
   };
 
   const formatCurrency = (amount) => {
@@ -200,12 +226,15 @@ const Dashboard = () => {
         >
           <span>{getStatusIcon(claim.status)}</span>
           {claim.status}
+          {isStatusInconsistent(claim) && (
+            <span title="Status doesn't match risk score" style={{ marginLeft: '4px', fontSize: '14px' }}>⚠️</span>
+          )}
         </div>
         
         <div className="risk-info">
           <div className="risk-label">Risk Score</div>
           <div className={`risk-score-small ${getRiskClass(claim.riskScore)}`}>
-            {claim.riskScore}%
+            {Math.round(claim.riskScore < 1 ? claim.riskScore * 100 : claim.riskScore)}%
           </div>
         </div>
       </div>

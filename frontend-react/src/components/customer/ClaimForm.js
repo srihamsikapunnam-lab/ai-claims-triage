@@ -24,6 +24,7 @@ const ClaimFormCustomer = ({ onClaimCreated }) => {
     };
   }, []);
   const [formData, setFormData] = useState({
+    patient_name: '',
     patient_age: '',
     diagnosis: '',
     admission_date: '',
@@ -31,9 +32,11 @@ const ClaimFormCustomer = ({ onClaimCreated }) => {
     claimed_amount: '',
     description: ''
   });
+  const [selectedFile, setSelectedFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [verificationInfo, setVerificationInfo] = useState(null);
 
   const handleChange = (e) => {
     setFormData({
@@ -41,45 +44,107 @@ const ClaimFormCustomer = ({ onClaimCreated }) => {
       [e.target.name]: e.target.value
     });
     setError('');
+    setVerificationInfo(null);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'text/plain'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Only JPG, PNG, PDF, and TXT files are allowed');
+        e.target.value = '';
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('File size must be less than 10MB');
+        e.target.value = '';
+        return;
+      }
+      
+      setSelectedFile(file);
+      setError('');
+      setVerificationInfo(null);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate file is selected
+    if (!selectedFile) {
+      setError('Please upload a supporting document (medical bill/receipt)');
+      return;
+    }
+    
     setIsSubmitting(true);
     setError('');
     setSuccess('');
+    setVerificationInfo(null);
 
     try {
-      const claimData = {
-        patient_age: parseInt(formData.patient_age),
-        diagnosis: formData.diagnosis,
-        admission_date: formData.admission_date,
-        discharge_date: formData.discharge_date,
-        claimed_amount: parseFloat(formData.claimed_amount),
-        description: formData.description
-      };
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('file', selectedFile);
+      formDataToSend.append('patient_name', formData.patient_name);
+      formDataToSend.append('patient_age', formData.patient_age);
+      formDataToSend.append('diagnosis', formData.diagnosis);
+      formDataToSend.append('amount', formData.claimed_amount);
+      formDataToSend.append('admission_date', formData.admission_date);
+      formDataToSend.append('discharge_date', formData.discharge_date);
 
-      const result = await apiClient.post('/claims', claimData);
-      
-      setSuccess(
-        <span>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }}>
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
-          Claim submitted successfully! Claim ID: {result.id}
-        </span>
-      );
-      
-      if (onClaimCreated) {
-        onClaimCreated(result);
+      // Submit to new verified claim endpoint
+      const response = await fetch('http://localhost:8000/api/submit-verified-claim', {
+        method: 'POST',
+        body: formDataToSend,
+        // Don't set Content-Type header - browser will set it with boundary for multipart
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Verification SUCCESS
+        setVerificationInfo({
+          ...result.verification,
+          risk_score: result.risk_score,
+          risk_category: result.risk_category,
+          duration: result.duration_of_stay
+        });
+        
+        const riskLabel = result.risk_score < 30 ? 'Low Risk' : 
+                         result.risk_score < 70 ? 'Medium Risk' : 'High Risk';
+        const riskColor = result.risk_score < 30 ? '#28a745' : 
+                         result.risk_score < 70 ? '#ffc107' : '#dc3545';
+        
+        setSuccess(
+          <span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }}>
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            Claim Verified & Submitted - <span style={{ color: riskColor, fontWeight: 'bold' }}>{riskLabel}</span>
+            <div style={{ marginTop: '6px', fontSize: '0.9em' }}>Claim ID: {result.claim_id}</div>
+          </span>
+        );
+        
+        if (onClaimCreated) {
+          onClaimCreated(result);
+        }
+
+        // Redirect to dashboard after 3 seconds
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 3000);
+      } else {
+        // Verification FAILED
+        setVerificationInfo(result.verification);
+        setError(result.message);
       }
-
-      // Redirect to dashboard after 1.5 seconds
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1500);
     } catch (err) {
-      setError(err.message || 'Failed to submit claim');
+      console.error('Submit error:', err);
+      setError(err.message || 'Failed to submit claim. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -104,11 +169,39 @@ const ClaimFormCustomer = ({ onClaimCreated }) => {
       {success && (
         <div className="success-message">
           {success}
+          {verificationInfo && (
+            <div style={{ marginTop: '12px', padding: '12px', backgroundColor: 'rgba(6, 182, 212, 0.1)', borderRadius: '8px', fontSize: '0.9em' }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#06b6d4' }}>Verification Details:</div>
+              <div>✓ Name Match: {verificationInfo.name_match}%</div>
+              <div>✓ Amount Found: {verificationInfo.amount_found ? 'Yes' : 'No'}</div>
+              <div>✓ OCR Score: {verificationInfo.overall_score.toFixed(1)}%</div>
+              {verificationInfo.duration && <div>✓ Duration of Stay: {verificationInfo.duration} days</div>}
+              {verificationInfo.risk_score !== undefined && (
+                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(6, 182, 212, 0.3)' }}>
+                  <div style={{ fontWeight: 'bold', color: '#06b6d4' }}>AI Fraud Analysis:</div>
+                  <div>Risk Score: {verificationInfo.risk_score}%</div>
+                  <div>Category: {verificationInfo.risk_category}</div>
+                </div>
+              )}
+            </div>
+          )}
           <p>Redirecting to dashboard...</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label>Patient Name *</label>
+          <input
+            type="text"
+            name="patient_name"
+            value={formData.patient_name}
+            onChange={handleChange}
+            required
+            placeholder="Full name as on document"
+          />
+        </div>
+
         <div className="form-row">
           <div className="form-group">
             <label>Patient Age *</label>
@@ -171,8 +264,40 @@ const ClaimFormCustomer = ({ onClaimCreated }) => {
               value={formData.discharge_date}
               onChange={handleChange}
               required
+              min={formData.admission_date}
             />
           </div>
+        </div>
+
+        <div className="form-group">
+          <label>Upload Proof (Medical Bill/Receipt) *</label>
+          <div style={{ marginBottom: '8px', fontSize: '0.9em', color: '#94a3b8' }}>
+            Accepted formats: JPG, PNG, PDF, TXT (Max 10MB)
+          </div>
+          <input
+            type="file"
+            onChange={handleFileChange}
+            required
+            accept=".jpg,.jpeg,.png,.pdf,.txt"
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '2px dashed #334155',
+              borderRadius: '8px',
+              backgroundColor: '#0f172a',
+              color: '#e2e8f0',
+              cursor: 'pointer'
+            }}
+          />
+          {selectedFile && (
+            <div style={{ marginTop: '8px', fontSize: '0.9em', color: '#06b6d4' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '14px', height: '14px', display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }}>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <path d="M14 2v6h6" />
+              </svg>
+              {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+            </div>
+          )}
         </div>
 
         <div className="form-group">
@@ -192,15 +317,20 @@ const ClaimFormCustomer = ({ onClaimCreated }) => {
           className="submit-btn"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Submitting...' : (
+          {isSubmitting ? (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle', marginRight: '8px', animation: 'spin 1s linear infinite' }}>
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
+              Verifying Document...
+            </>
+          ) : (
             <>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }}>
-                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
-                <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
-                <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
-                <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
               </svg>
-              Submit Claim for AI Review
+              Verify & Submit Claim
             </>
           )}
         </button>

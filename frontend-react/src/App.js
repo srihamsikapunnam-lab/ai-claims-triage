@@ -15,6 +15,7 @@ import CompanyAnalytics from './components/company/Analytics';
 import Sidebar from './components/Sidebar';
 import CustomerClaimDetail from './components/customer/ClaimDetail';
 import CompanyClaimDetail from './components/company/ClaimDetail';
+import DocumentVerifier from './components/DocumentVerifier';
 import './App.css';
 
 // Main App Component (after authentication)
@@ -38,6 +39,7 @@ function AuthenticatedApp() {
           <Route path="/dashboard" element={<DashboardToRender />} />
           <Route path="/submit" element={<ClaimFormToRender />} />
           <Route path="/claims/:claimId" element={<ClaimDetailToRender />} />
+          <Route path="/verify" element={<DocumentVerifier />} />
           {isCompanyStaff && (
             <>
               <Route path="/claims" element={<CompanyAllClaims />} />

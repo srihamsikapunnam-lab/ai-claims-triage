@@ -228,10 +228,33 @@ class FraudModelService:
             
             # Make prediction
             prediction_proba = self.model.predict_proba(processed_data)
-            fraud_probability = float(prediction_proba[0][1])  # Probability of fraud class
+            
+            # Debug: Print both probabilities to understand class order
+            print(f"🔍 DEBUG: predict_proba output: {prediction_proba[0]}")
+            print(f"🔍 DEBUG: Class 0 probability: {prediction_proba[0][0]}")
+            print(f"🔍 DEBUG: Class 1 probability: {prediction_proba[0][1]}")
+            
+            # CRITICAL: XGBoost classes might be ordered as [Fraud=0, Legit=1] or [Legit=0, Fraud=1]
+            # We need to check which class is which by looking at the model's classes_
+            try:
+                model_classes = self.model.classes_
+                print(f"🔍 DEBUG: Model classes order: {model_classes}")
+                # If classes are [0, 1], class 1 is fraud (index 1)
+                # If classes are [1, 0], class 1 is fraud but at index 0
+                fraud_class_index = 1  # Default assumption
+                if hasattr(self.model, 'classes_') and len(model_classes) == 2:
+                    # Find which index corresponds to fraud (class 1)
+                    fraud_class_index = list(model_classes).index(1)
+                    print(f"🔍 DEBUG: Fraud class is at index: {fraud_class_index}")
+            except:
+                fraud_class_index = 1  # Fallback to default
+            
+            fraud_probability = float(prediction_proba[0][fraud_class_index])  # Probability of fraud class
             
             # Convert to risk score (0-100)
             risk_score = int(fraud_probability * 100)
+            
+            print(f"🎯 FINAL: Fraud probability = {fraud_probability:.4f}, Risk score = {risk_score}%")
             
             # 🆕 WEEK 4 ANALYTICS: Track this prediction for dashboard
             analytics_service.record_prediction(
@@ -289,8 +312,9 @@ class FraudModelService:
             response = {
                 "prediction": "Fraud" if fraud_probability > 0.5 else "Legitimate",
                 "probability": round(fraud_probability, 4),
+                "fraud_probability": fraud_probability,  # Explicit fraud probability (0.0-1.0)
                 "risk_score": risk_score,
-                "risk_category": self.get_risk_category(risk_score),
+                "risk_category": self.get_risk_category(fraud_probability),  # Use fraud_probability, not risk_score
                 "explanation": explanations,
                 "lime_explanation": lime_explanations,
                 "status": status,
@@ -353,18 +377,22 @@ class FraudModelService:
         
         return explanations[:3]
     
-    def get_risk_category(self, risk_score: int) -> str:
-        """Convert risk score to category"""
-        if risk_score >= 80:
-            return "Very High"
-        elif risk_score >= 60:
+    def get_risk_category(self, fraud_probability: float) -> str:
+        """
+        Convert fraud probability (0.0-1.0) to risk category.
+        Probability represents chance of fraud (Class 1).
+        
+        Mapping:
+        - Low Risk: fraud_probability < 0.3 (< 30%)
+        - Medium Risk: 0.3 <= fraud_probability < 0.7 (30-70%)
+        - High Risk: fraud_probability >= 0.7 (>= 70%)
+        """
+        if fraud_probability >= 0.7:
             return "High"
-        elif risk_score >= 40:
+        elif fraud_probability >= 0.3:
             return "Medium"
-        elif risk_score >= 20:
-            return "Low"
         else:
-            return "Very Low"
+            return "Low"
     
     def _dummy_prediction(self, claim_data: Dict[str, Any]) -> Dict[str, Any]:
         """Fallback dummy prediction"""

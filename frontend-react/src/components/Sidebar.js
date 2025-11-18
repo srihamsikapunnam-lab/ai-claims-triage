@@ -41,6 +41,12 @@ const Sidebar = () => {
       label: 'Analytics',
       path: '/analytics',
       roles: ['company_admin', 'company_staff']
+    },
+    {
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', height: '20px' }}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>,
+      label: 'OCR Verify',
+      path: '/verify',
+      roles: ['customer', 'company_admin', 'company_staff']
     }
   ];
 
