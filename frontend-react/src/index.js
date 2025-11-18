@@ -1,8 +1,3 @@
-// Global API URL override
-if (!process.env.REACT_APP_API_BASE) {
-  process.env.REACT_APP_API_BASE = 'https://ai-claims.onrender.com';
-}
-console.log('Backend URL set to:', process.env.REACT_APP_API_BASE);
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';

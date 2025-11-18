@@ -1,83 +1,42 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import LandingPage from './components/LandingPage';
 import Login from './components/Auth/Login';
+import CustomerLogin from './components/Auth/CustomerLogin';
+import AdminLogin from './components/Auth/AdminLogin';
 import Register from './components/Auth/Register';
-import ClaimForm from './components/ClaimForm';
-import Dashboard from './components/Dashboard';
-import ClaimDetail from './components/ClaimDetail';
+import CustomerClaimForm from './components/customer/ClaimForm';
+import CompanyClaimForm from './components/company/ClaimForm';
+import CustomerDashboard from './components/customer/Dashboard';
+import CompanyDashboard from './components/company/Dashboard';
+import Sidebar from './components/Sidebar';
+import CustomerClaimDetail from './components/customer/ClaimDetail';
+import CompanyClaimDetail from './components/company/ClaimDetail';
 import './App.css';
 
 // Main App Component (after authentication)
 function AuthenticatedApp() {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const [apiStatus, setApiStatus] = useState('checking...');
 
-  useEffect(() => {
-    // Check backend health
-    const checkHealth = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/health');
-        if (response.ok) {
-          setApiStatus('✅ Connected');
-        } else {
-          setApiStatus('❌ Disconnected');
-        }
-      } catch (err) {
-        setApiStatus('❌ Disconnected');
-      }
-    };
-    checkHealth();
-  }, []);
+  const { isCustomer, isCompanyStaff } = useAuth();
 
-  const handleLogout = async () => {
-    await logout();
-  };
-
-  const isActive = (path) => location.pathname === path;
+  const DashboardToRender = isCompanyStaff ? CompanyDashboard : CustomerDashboard;
+  const ClaimFormToRender = isCompanyStaff ? CompanyClaimForm : CustomerClaimForm;
+  const ClaimDetailToRender = isCompanyStaff ? CompanyClaimDetail : CustomerClaimDetail;
 
   return (
     <div className="App">
-      <header className="App-header">
-        <div className="header-content">
-          <h1>🏥 Claims Triage System</h1>
-          <div className="header-right">
-            <span className="api-status">{apiStatus}</span>
-            <span className="user-info">
-              👤 {user?.full_name} ({user?.role})
-            </span>
-            <button onClick={handleLogout} className="logout-btn">
-              Logout
-            </button>
-          </div>
-        </div>
+      <Sidebar />
 
-        <nav className="app-nav">
-          <Link to="/dashboard">
-            <button className={isActive('/dashboard') ? 'active' : ''}>
-              📊 Dashboard
-            </button>
-          </Link>
-          {user?.role === 'customer' && (
-            <Link to="/submit">
-              <button className={isActive('/submit') ? 'active' : ''}>
-                ➕ Submit Claim
-              </button>
-            </Link>
-          )}
-        </nav>
-      </header>
-
-      <main>
-        <div className="page">
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/submit" element={<ClaimForm />} />
-            <Route path="/claims/:claimId" element={<ClaimDetail />} />
-          </Routes>
-        </div>
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardToRender />} />
+          <Route path="/submit" element={<ClaimFormToRender />} />
+          <Route path="/claims/:claimId" element={<ClaimDetailToRender />} />
+        </Routes>
       </main>
     </div>
   );
@@ -85,18 +44,99 @@ function AuthenticatedApp() {
 
 // Root App with Auth Check
 function App() {
-  const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
-
   return (
     <Router>
       <AuthProvider>
-        <AppContent authMode={authMode} setAuthMode={setAuthMode} />
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Navigate to="/login/customer" replace />} />
+          <Route path="/login/customer" element={<CustomerLoginWrapper />} />
+          <Route path="/login/admin" element={<AdminLoginWrapper />} />
+          <Route path="/register" element={<RegisterWrapper />} />
+          <Route path="/*" element={<ProtectedRoutes />} />
+        </Routes>
       </AuthProvider>
     </Router>
   );
 }
 
-function AppContent({ authMode, setAuthMode }) {
+function CustomerLoginWrapper() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <CustomerLogin />;
+}
+
+function AdminLoginWrapper() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <AdminLogin />;
+}
+
+function LoginWrapper() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Login />;
+}
+
+function RegisterWrapper() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Register />;
+}
+
+function ProtectedRoutes() {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -109,15 +149,7 @@ function AppContent({ authMode, setAuthMode }) {
   }
 
   if (!isAuthenticated) {
-    return (
-      <>
-        {authMode === 'login' ? (
-          <Login onSwitchToRegister={() => setAuthMode('register')} />
-        ) : (
-          <Register onSwitchToLogin={() => setAuthMode('login')} />
-        )}
-      </>
-    );
+    return <Navigate to="/login/customer" replace />;
   }
 
   return <AuthenticatedApp />;

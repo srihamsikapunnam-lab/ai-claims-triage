@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
 
-const Login = () => {
+const AdminLogin = () => {
   const { login, error } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -27,7 +27,13 @@ const Login = () => {
     setLocalError('');
 
     try {
-      await login(formData.email, formData.password);
+      const result = await login(formData.email, formData.password);
+      // Check if user is actually an admin/staff
+      if (!['company_admin', 'company_staff'].includes(result.user.role)) {
+        setLocalError('This login is for admin/staff only. Please use the customer portal.');
+        setIsLoading(false);
+        return;
+      }
       // Navigation handled by App.js based on auth state
     } catch (err) {
       setLocalError(err.message || 'Login failed');
@@ -37,10 +43,19 @@ const Login = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container admin-auth">
       <div className="auth-card">
-        <h2>🔐 Login to Claims Triage</h2>
-        <p className="auth-subtitle">Access your insurance claims dashboard</p>
+        <div className="auth-header">
+          <button 
+            className="back-btn"
+            onClick={() => navigate('/')}
+          >
+            ← Back
+          </button>
+        </div>
+        
+        <h2>⚡ Admin Login</h2>
+        <p className="auth-subtitle">Access the claims management dashboard</p>
 
         {(localError || error) && (
           <div className="error-message">
@@ -50,14 +65,14 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label>Email Address</label>
+            <label>Admin Email</label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
               required
-              placeholder="your.email@example.com"
+              placeholder="admin@company.com"
             />
           </div>
 
@@ -69,39 +84,39 @@ const Login = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              placeholder="Enter your password"
+              placeholder="Enter your admin password"
             />
           </div>
 
           <button 
             type="submit" 
-            className="auth-button"
+            className="auth-button admin-btn"
             disabled={isLoading}
           >
-            {isLoading ? 'Logging in...' : 'Login'}
+            {isLoading ? 'Logging in...' : 'Login as Admin'}
           </button>
         </form>
 
         <div className="auth-footer">
           <p>
-            Don't have an account?{' '}
+            Are you a customer?{' '}
             <button 
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/login/customer')}
               className="link-button"
             >
-              Register here
+              Customer Login
             </button>
           </p>
         </div>
 
         <div className="demo-credentials">
-          <p><strong>Demo Accounts:</strong></p>
-          <p>Customer: customer@demo.com / password123</p>
-          <p>Admin: admin@demo.com / admin123</p>
+          <p><strong>Demo Admin Accounts:</strong></p>
+          <p>admin@demo.com / admin123</p>
+          <p>staff@demo.com / staff123</p>
         </div>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default AdminLogin;

@@ -4,12 +4,6 @@
   background: #0f172a;
   color: white;
   padding: 2rem;
-  margin-left: 70px; /* Space for collapsed sidebar */
-  transition: margin-left 0.1s ease;
-}
-
-.claim-form-container.sidebar-expanded {
-  margin-left: 280px; /* Space for expanded sidebar */
 }
 
 .form-header {
@@ -224,11 +218,6 @@
 @media (max-width: 768px) {
   .claim-form-container {
     padding: 1rem;
-    margin-left: 0; /* No sidebar space on mobile */
-  }
-  
-  .claim-form-container.sidebar-expanded {
-    margin-left: 0; /* Sidebar overlay on mobile */
   }
   
   .form-header h1 {

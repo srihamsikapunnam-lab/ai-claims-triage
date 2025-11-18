@@ -156,3 +156,84 @@
     padding: 30px 20px;
   }
 }
+
+/* Separate Login Page Styles */
+.customer-auth .auth-container {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+}
+
+.admin-auth .auth-container {
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+}
+
+.auth-header {
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.customer-auth h2 {
+  color: #4f46e5;
+}
+
+.admin-auth h2 {
+  color: #f59e0b;
+}
+
+.customer-btn {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
+}
+
+.customer-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(79, 70, 229, 0.4);
+}
+
+.admin-btn {
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+}
+
+.admin-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.4);
+}
+
+.customer-auth .auth-card {
+  border-top: 4px solid #4f46e5;
+}
+
+.admin-auth .auth-card {
+  border-top: 4px solid #f59e0b;
+}
+
+/* Enhanced demo credentials for separate logins */
+.customer-auth .demo-credentials {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-left: 4px solid #4f46e5;
+}
+
+.admin-auth .demo-credentials {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border-left: 4px solid #f59e0b;
+}

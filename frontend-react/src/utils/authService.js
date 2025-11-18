@@ -1,5 +1,5 @@
 // Direct connection to backend API
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 class AuthService {
   constructor() {
@@ -8,7 +8,7 @@ class AuthService {
   }
 
   async register(userData) {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ class AuthService {
   }
 
   async login(email, password) {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ class AuthService {
   async logout() {
     try {
       if (this.token) {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${this.token}`,
@@ -63,7 +63,7 @@ class AuthService {
   async getCurrentUser() {
     if (!this.token) return null;
 
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
       headers: {
         'Authorization': `Bearer ${this.token}`,
       },

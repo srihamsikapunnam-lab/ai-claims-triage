@@ -3,15 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
 
-const Register = () => {
-  const { register, error } = useAuth();
+const CustomerLogin = () => {
+  const { login, error } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
-    full_name: '',
     password: '',
-    confirmPassword: '',
-    role: 'customer',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState('');
@@ -29,40 +26,36 @@ const Register = () => {
     setIsLoading(true);
     setLocalError('');
 
-    // Validate password match
-    if (formData.password !== formData.confirmPassword) {
-      setLocalError('Passwords do not match');
-      setIsLoading(false);
-      return;
-    }
-
-    // Validate password length
-    if (formData.password.length < 6) {
-      setLocalError('Password must be at least 6 characters');
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      await register({
-        email: formData.email,
-        full_name: formData.full_name,
-        password: formData.password,
-        role: formData.role,
-      });
+      const result = await login(formData.email, formData.password);
+      // Check if user is actually a customer
+      if (result.user.role !== 'customer') {
+        setLocalError('This login is for customers only. Please use the admin portal.');
+        setIsLoading(false);
+        return;
+      }
       // Navigation handled by App.js based on auth state
     } catch (err) {
-      setLocalError(err.message || 'Registration failed');
+      setLocalError(err.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container customer-auth">
       <div className="auth-card">
-        <h2>📝 Create Account</h2>
-        <p className="auth-subtitle">Register to submit and track claims</p>
+        <div className="auth-header">
+          <button 
+            className="back-btn"
+            onClick={() => navigate('/')}
+          >
+            ← Back
+          </button>
+        </div>
+        
+        <h2>👤 Customer Login</h2>
+        <p className="auth-subtitle">Access your insurance claims dashboard</p>
 
         {(localError || error) && (
           <div className="error-message">
@@ -71,18 +64,6 @@ const Register = () => {
         )}
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label>Full Name</label>
-            <input
-              type="text"
-              name="full_name"
-              value={formData.full_name}
-              onChange={handleChange}
-              required
-              placeholder="John Doe"
-            />
-          </div>
-
           <div className="form-group">
             <label>Email Address</label>
             <input
@@ -103,46 +84,47 @@ const Register = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              minLength="6"
-              placeholder="At least 6 characters"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Confirm Password</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              placeholder="Re-enter password"
+              placeholder="Enter your password"
             />
           </div>
 
           <button 
             type="submit" 
-            className="auth-button"
+            className="auth-button customer-btn"
             disabled={isLoading}
           >
-            {isLoading ? 'Creating Account...' : 'Register'}
+            {isLoading ? 'Logging in...' : 'Login as Customer'}
           </button>
         </form>
 
         <div className="auth-footer">
           <p>
-            Already have an account?{' '}
+            Don't have an account?{' '}
             <button 
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/register')}
               className="link-button"
             >
-              Login here
+              Register here
             </button>
           </p>
+          <p>
+            Are you an admin?{' '}
+            <button 
+              onClick={() => navigate('/login/admin')}
+              className="link-button"
+            >
+              Admin Login
+            </button>
+          </p>
+        </div>
+
+        <div className="demo-credentials">
+          <p><strong>Demo Customer Account:</strong></p>
+          <p>customer@demo.com / password123</p>
         </div>
       </div>
     </div>
   );
 };
 
-export default Register;
+export default CustomerLogin;

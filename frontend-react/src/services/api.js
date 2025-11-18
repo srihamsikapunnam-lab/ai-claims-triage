@@ -38,30 +38,34 @@ class ClaimsAPI {
         }
     }
 
-    // Submit claim - may need adjustment based on actual endpoints
+    // Submit claim - uses the /api/claims endpoint
     async submitClaim(claimData) {
         try {
-            // Try using batch predict for now since no direct submit endpoint
-            const response = await fetch(`${this.BASE_URL}/api/batch/predict`, {
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch(`${this.BASE_URL}/api/claims`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    claims: [{
-                        title: claimData.title,
-                        description: claimData.description,
-                        category: claimData.category,
-                        amount: claimData.amount,
-                        claimant: claimData.claimant
-                    }]
+                    patient_age: claimData.patient_age,
+                    diagnosis: claimData.diagnosis,
+                    admission_date: claimData.admission_date,
+                    discharge_date: claimData.discharge_date,
+                    claimed_amount: claimData.claimed_amount,
+                    description: claimData.description || ''
                 })
             });
-            const result = await response.json();
-            return result.predictions ? result.predictions[0] : result;
+            
+            if (!response.ok) {
+                throw new Error('Failed to submit claim');
+            }
+            
+            return await response.json();
         } catch (error) {
             console.error('Submit Claim Error:', error);
-            return this.getMockSubmission(claimData);
+            throw error;
         }
     }
 

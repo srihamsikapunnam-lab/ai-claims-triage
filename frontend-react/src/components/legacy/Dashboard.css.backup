@@ -1,0 +1,9 @@
+.dashboard-legacy-note {
+  padding: 1rem;
+  background: #fffbe6;
+  border: 1px solid #f5e1a4;
+  border-radius: 8px;
+  color: #6b4500;
+}
+
+/* Full backup stylesheet moved here for archival purposes. */
