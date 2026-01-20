@@ -4,7 +4,9 @@
   bottom: 20px;
   right: 20px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  z-index: 999;
+  z-index: 1099;
+  pointer-events: none;
+  /* Ensures content below remains interactive */
 }
 
 /* Floating Bubble Button */
@@ -19,6 +21,8 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
   transition: all 0.3s ease;
+  pointer-events: auto;
+  /* Re-enable pointer events for button interaction */
 }
 
 .chatbot-bubble:hover {
@@ -35,7 +39,7 @@
   position: fixed;
   bottom: 90px;
   right: 20px;
-  width: 380px;
+  width: 350px;
   height: 500px;
   background: white;
   border-radius: 12px;
@@ -43,6 +47,9 @@
   display: flex;
   flex-direction: column;
   animation: slideUp 0.3s ease;
+  pointer-events: auto;
+  /* Re-enable pointer events for chat window interaction */
+  z-index: 1100;
 }
 
 @keyframes slideUp {
@@ -263,6 +270,39 @@
 .chatbot-input-area button:disabled {
   background: #ccc;
   cursor: not-allowed;
+}
+
+.chatbot-attach-btn {
+  padding: 10px 12px !important;
+  background: #6c757d !important;
+  font-size: 16px;
+  min-width: 40px;
+}
+
+.chatbot-attach-btn:hover:not(:disabled) {
+  background: #5a6268 !important;
+}
+
+.chatbot-upload-btn {
+  padding: 10px 12px !important;
+  background: #28a745 !important;
+  font-size: 16px;
+  min-width: 40px;
+  animation: pulse 0.6s ease-in-out infinite;
+}
+
+.chatbot-upload-btn:hover:not(:disabled) {
+  background: #218838 !important;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* Mobile Responsive */
