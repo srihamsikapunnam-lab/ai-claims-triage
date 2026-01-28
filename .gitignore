@@ -1,5 +1,28 @@
 # AI-CLAIMS-TRIAGE
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Models
+models/*.pkl
+
+# Raw data (never commit)
+data/raw/
+
+# Processed data (never commit large outputs)
+data/processed/*.csv
+
+# Allow directory structure
+!data/processed/.gitkeep
+
 # Node.js dependencies
 node_modules/
 npm-debug.log*
