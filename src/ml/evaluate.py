@@ -59,3 +59,7 @@ def compare_models(results):
     df = pd.DataFrame(results)
     df = df.sort_values('recall_at_95%_precision', ascending=False)
     return df
+if __name__ == "__main__":
+    print("Evaluation module loaded successfully.")
+    print("This file is intended to be imported, not run directly.")
+

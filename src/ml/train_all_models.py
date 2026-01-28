@@ -1,4 +1,5 @@
-﻿"""
+﻿
+"""
 Main script to train and evaluate all models.
 """
 import sys
@@ -13,15 +14,36 @@ from pathlib import Path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 try:
-    from logistic_model import LogisticModel
-    from random_forest_model import RandomForestModel
-    from xgboost_model import XGBoostModel
-    from lightgbm_model import LightGBMModel
-    from evaluate import evaluate_model, compare_models
+    from src.ml.logistic_model import LogisticModel
+    from src.ml.random_forest_model import RandomForestModel
+    from src.ml.lightgbm_model import LightGBMModel
+    from src.ml.xgboost_model import XGBoostModel
+    from src.ml.evaluate import evaluate_model
+
 except ImportError as e:
     print(f"Import error: {e}")
     print("Make sure all model files are in the same directory")
     sys.exit(1)
+def compare_models(results):
+    """
+    Compare model metrics and return sorted DataFrame.
+    Priority: recall_at_95%_precision, then roc_auc
+    """
+    df = pd.DataFrame(results)
+
+    # Ensure required columns exist
+    required = ["model_name", "roc_auc", "pr_auc", "recall_at_95%_precision"]
+    for col in required:
+        if col not in df.columns:
+            df[col] = 0.0
+
+    df = df.sort_values(
+        by=["recall_at_95%_precision", "roc_auc"],
+        ascending=False
+    )
+
+    return df.reset_index(drop=True)
+
 
 def load_processed_data(data_dir="data/processed"):
     """Load processed training and testing data."""
