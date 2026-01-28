@@ -9,7 +9,8 @@ def main():
     print("Loading raw CMS claims dataset...")
 
     df = pd.read_csv(
-        "data/raw/original/Train-1542865627584.csv"
+        "data/processed/unified_claims_v1.csv"
+
     )
 
     print("✅ Data loaded")
