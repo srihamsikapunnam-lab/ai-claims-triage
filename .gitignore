@@ -1,3 +1,4 @@
+
 # AI-CLAIMS-TRIAGE
 
 # Python
@@ -257,3 +258,5 @@ jspm_packages/
 .yarn-integrity
 
 .build
+data/processed/*.npy
+

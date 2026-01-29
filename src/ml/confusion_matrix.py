@@ -1,37 +1,20 @@
-"""
-Generate confusion matrix for best trained model
-"""
-
-import numpy as np
-import pickle
-from pathlib import Path
+import joblib
+import pandas as pd
 from sklearn.metrics import confusion_matrix, classification_report
 
-def main():
-    # Load test data
-    data_dir = Path("data/processed")
+# Load data
+X = pd.read_csv("data/processed/features.csv")
+y = pd.read_csv("data/processed/labels.csv").values.ravel()
 
-    X_test = np.load(data_dir / "X_test.npy")
-    y_test = np.load(data_dir / "y_test.npy")
+# Load trained model
+model = joblib.load("models/fraud_model.pkl")
 
-    # Load best model
-    with open("models/best_model.pkl", "rb") as f:
-        model = pickle.load(f)
+# Predict
+preds = model.predict(X)
 
-    # IMPORTANT FIX 👇
-    # Use underlying sklearn model
-    y_pred = model.model.predict(X_test)
+# Output
+print("Confusion Matrix:")
+print(confusion_matrix(y, preds))
 
-    # Confusion matrix
-    cm = confusion_matrix(y_test, y_pred)
-
-    print("\nCONFUSION MATRIX")
-    print("================")
-    print(cm)
-
-    print("\nCLASSIFICATION REPORT")
-    print("=====================")
-    print(classification_report(y_test, y_pred, digits=4))
-
-if __name__ == "__main__":
-    main()
+print("\nClassification Report:")
+print(classification_report(y, preds))
