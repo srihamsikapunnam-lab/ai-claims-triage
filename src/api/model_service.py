@@ -13,7 +13,7 @@ except ImportError:
     xgb = None
 
 # 🆕 WEEK 4 ANALYTICS: Import analytics service
-from analytics import analytics_service
+from api.analytics import analytics_service
 
 logger = logging.getLogger(__name__)
 
