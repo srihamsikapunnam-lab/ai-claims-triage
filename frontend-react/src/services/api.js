@@ -1,7 +1,7 @@
 class ClaimsAPI {
   constructor() {
-    // Use Netlify environment variable
-    this.BASE_URL = process.env.REACT_APP_API_BASE;
+    // Use Netlify environment variable with fallback
+    this.BASE_URL = process.env.REACT_APP_API_BASE || 'https://ai-claims-backend.onrender.com';
   }
 
   /* --------------------
