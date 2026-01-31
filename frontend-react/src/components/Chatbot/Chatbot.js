@@ -37,7 +37,7 @@ const Chatbot = () => {
     try {
       console.log('[CHATBOT] Sending message to backend:', messageToSend);
 
-      const response = await fetch('http://localhost:8001/chat', {
+      const response = await fetch('https://ai-claims-backend.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -162,7 +162,7 @@ const Chatbot = () => {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await fetch('http://localhost:8001/upload', {
+      const response = await fetch('https://ai-claims-backend.onrender.com/upload', {
         method: 'POST',
         body: formData,
       });
