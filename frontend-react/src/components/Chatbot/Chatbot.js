@@ -76,7 +76,7 @@ const Chatbot = () => {
       let errorText = 'Sorry, I encountered an issue.';
       
       if (error.message.includes('Failed to fetch')) {
-        errorText = 'Cannot connect to chat service. Is the server running on port 8001?';
+        errorText = 'Cannot connect to chat service. Please check your internet connection.';
       } else if (error.message.includes('Server error')) {
         errorText = `Server error: ${error.message}`;
       } else {
