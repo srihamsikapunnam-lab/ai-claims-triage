@@ -96,112 +96,204 @@ class ClaimDatabase:
 
 # ===== Intent Processor =====
 class IntentProcessor:
-    """Process user messages and classify intent with claim awareness"""
+    """Processes user messages and returns intent-based responses"""
     
     def __init__(self):
-        # Intent patterns with claim-aware responses
+        # Define intent keywords and responses
         self.intents = {
+            "greeting": {
+                "keywords": ["hello", "hi", "hey", "greetings", "good morning", "good afternoon"],
+                "responses": [
+                    "Hello! I can help with claims processing."
+                ]
+            },
             "claim_status": {
-                "patterns": [
-                    r"status.*claim", r"claim.*status", r"where.*claim",
-                    r"check.*claim", r"claim.*check", r"track.*claim",
-                    r"find.*claim", r"claim.*find"
-                ],
-                "response": "I can help you check your claim status. Please provide your claim ID.",
-                "requires_claim": True
+                "keywords": ["status", "claim status", "check claim", "where is my claim", "tracking"],
+                "responses": [
+                    "Check your dashboard for your claim status."
+                ]
+            },
+            "fraud": {
+                "keywords": ["fraud", "suspicious", "fraud detection"],
+                "responses": [
+                    "Our AI system detects fraudulent claims and suspicious patterns in claims."
+                ]
             },
             "claim_submission": {
-                "patterns": [
-                    r"submit.*claim", r"new.*claim", r"file.*claim",
-                    r"create.*claim", r"start.*claim", r"how.*submit"
-                ],
-                "response": "To submit a new claim, please fill out the claim form with your patient information, diagnosis, and supporting documents.",
-                "requires_claim": False
+                "keywords": ["submit", "new claim", "file claim", "submit claim", "upload", "create claim"],
+                "responses": [
+                    "Submit claims via the Claims form in the dashboard."
+                ]
             },
-            "rejection_help": {
-                "patterns": [
-                    r"reject.*claim", r"claim.*reject", r"denied.*claim",
-                    r"why.*reject", r"appeal.*claim", r"claim.*appeal"
-                ],
-                "response": "If your claim was rejected, you can appeal within 30 days by providing additional documentation or correcting the information.",
-                "requires_claim": False
-            },
-            "document_help": {
-                "patterns": [
-                    r"upload.*document", r"document.*upload", r"attach.*file",
-                    r"add.*document", r"missing.*document", r"document.*missing"
-                ],
-                "response": "You can upload supporting documents like medical reports, bills, and prescriptions when submitting your claim.",
-                "requires_claim": False
-            },
-            "general_help": {
-                "patterns": [
-                    r"help", r"what.*do", r"how.*work", r"support",
-                    r"assist", r"guide"
-                ],
-                "response": "I can help with claim submission, checking claim status, understanding rejections, and document uploads. What would you like to know?",
-                "requires_claim": False
+            "default": {
+                "keywords": [],  # Matches everything not above
+                "responses": [
+                    "I can help with claim submission, claim status, fraud detection, and more. What do you need?"
+                ]
             }
         }
     
-    def extract_claim_id(self, message: str) -> Optional[str]:
-        """Extract claim ID from message using regex patterns"""
-        # UUID pattern
-        uuid_pattern = r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
-        uuid_match = re.search(uuid_pattern, message, re.IGNORECASE)
-        if uuid_match:
-            return uuid_match.group(0)
+    def _clean_message(self, message: str) -> str:
+        """Normalize message for matching"""
+        return message.lower().strip()
+    
+    def _extract_claim_id(self, message: str) -> Optional[str]:
+        """
+        Extract claim ID from user message
         
-        # Numeric ID pattern (simple numbers)
-        numeric_pattern = r'\b\d{1,10}\b'
-        numeric_matches = re.findall(numeric_pattern, message)
-        if numeric_matches:
-            # Return the last numeric match (most likely the claim ID)
-            return numeric_matches[-1]
+        Patterns supported:
+        - CLAIM123, CLAIM-123, Claim123
+        - UUID format: 21085f73-883a-4e5d-8f39-1b88972b25fb
+        - Numeric: 12345, #12345
+        
+        Returns:
+            Claim ID string or None if not found
+        """
+        # Pattern 1: CLAIM followed by numbers (CLAIM123, Claim-456)
+        match = re.search(r'claim[\s-]*(\d+)', message, re.IGNORECASE)
+        if match:
+            return f"CLAIM{match.group(1)}"
+        
+        # Pattern 2: Just numbers with # prefix (#12345, # 12345)
+        match = re.search(r'#\s*(\d+)', message)
+        if match:
+            return match.group(1)
+        
+        # Pattern 3: UUID format (8-4-4-4-12 hex digits)
+        match = re.search(r'([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})', message, re.IGNORECASE)
+        if match:
+            return match.group(1)
+        
+        # Pattern 4: Standalone long numbers that look like IDs
+        match = re.search(r'\b(\d{10,})\b', message)
+        if match:
+            return match.group(1)
         
         return None
     
-    def classify_intent(self, message: str) -> str:
-        """Classify the intent of the message"""
-        message_lower = message.lower()
+    def _find_intent(self, message: str) -> tuple:
+        """Find the best matching intent for a message"""
+        clean_msg = self._clean_message(message)
         
-        for intent, data in self.intents.items():
-            for pattern in data["patterns"]:
-                if re.search(pattern, message_lower):
-                    return intent
+        # Check greeting first (most specific)
+        if any(keyword in clean_msg for keyword in self.intents["greeting"]["keywords"]):
+            return "greeting", self.intents["greeting"]["responses"]
         
-        return "general"
+        # Check claim_status
+        if any(keyword in clean_msg for keyword in self.intents["claim_status"]["keywords"]):
+            return "claim_status", self.intents["claim_status"]["responses"]
+        
+        # Check fraud
+        if any(keyword in clean_msg for keyword in self.intents["fraud"]["keywords"]):
+            return "fraud", self.intents["fraud"]["responses"]
+        
+        # Check claim_submission
+        if any(keyword in clean_msg for keyword in self.intents["claim_submission"]["keywords"]):
+            return "claim_submission", self.intents["claim_submission"]["responses"]
+        
+        # Return default if no intent matches
+        return "default", self.intents["default"]["responses"]
     
     def process(self, message: str) -> dict:
-        """Process message and return response with intent and claim data"""
-        intent = self.classify_intent(message)
-        claim_id = self.extract_claim_id(message)
+        """
+        Process user message and return intent-based response
         
-        # Get base response
-        if intent in self.intents:
-            response = self.intents[intent]["response"]
-            requires_claim = self.intents[intent]["requires_claim"]
-        else:
-            response = "I'm here to help with your insurance claims. You can ask about claim status, submission, rejections, or document uploads."
-            requires_claim = False
+        First checks if message contains claim ID and fetches claim data from database.
+        If claim found, overrides intent to 'claim_status' and returns claim details.
+        If claim ID detected but not found, asks user to verify the ID.
         
-        # If intent requires claim and we have one, fetch claim data
-        if requires_claim and claim_id:
+        Returns:
+            {
+                "reply": "Response text",
+                "intent": "Intent name",
+                "claim_id": "Claim ID or null"
+            }
+        """
+        # Try to extract claim ID from message
+        claim_id = self._extract_claim_id(message)
+        
+        if claim_id:
+            # Look up claim in database
             claim_data = ClaimDatabase.get_claim(claim_id)
+            
             if claim_data:
-                response = f"Found your claim. Status: {claim_data['status']}, Amount: ${claim_data['amount']:.2f}, Risk Score: {claim_data['risk_score']:.2f}"
+                # Claim found - return claim details
+                reply = self._build_claim_response(claim_data)
+                return {
+                    "reply": reply,
+                    "intent": "claim_status",
+                    "claim_id": claim_data['id']
+                }
             else:
-                response = f"I couldn't find a claim with ID '{claim_id}'. Please check your claim ID and try again."
+                # Claim ID mentioned but not found
+                reply = f"I couldn't find claim {claim_id} in our system. Could you please verify the claim ID? You can usually find it in your confirmation email or on the dashboard."
+                return {
+                    "reply": reply,
+                    "intent": "claim_status",
+                    "claim_id": None
+                }
         
-        # If no claim ID but intent requires one
-        elif requires_claim and not claim_id:
-            response = "To check your claim status, please provide your claim ID (it looks like a long number or UUID)."
+        # No claim ID detected - proceed with normal intent matching
+        intent_name, responses = self._find_intent(message)
+        reply = responses[0]
         
         return {
-            "reply": response,
-            "intent": intent,
-            "claim_id": claim_id
+            "reply": reply,
+            "intent": intent_name,
+            "claim_id": None
         }
+    
+    def _build_claim_response(self, claim_data: dict) -> str:
+        """
+        Build a detailed claim response from database data
+        
+        Args:
+            claim_data: Dictionary with claim information from database
+        
+        Returns:
+            Formatted response string with claim details
+        """
+        claim_id = claim_data.get('id', 'Unknown')
+        status = claim_data.get('status', 'Unknown').replace('_', ' ').title()
+        stage = claim_data.get('current_stage', 'Unknown').replace('_', ' ').title()
+        risk_category = claim_data.get('risk_category', 'Unknown')
+        amount = claim_data.get('amount', 0)
+        diagnosis = claim_data.get('diagnosis', 'Not specified')
+        
+        # Build comprehensive response
+        response = f"""📋 **Claim Status: {claim_id}**
+
+✅ **Status:** {status}
+📑 **Stage:** {stage}
+
+**Claim Details:**
+• Amount Claimed: ${amount:,.2f}
+• Risk Category: {risk_category}
+• Diagnosis: {diagnosis}
+• Patient Age: {claim_data.get('patient_age', 'N/A')}
+
+**Timeline:**
+• Admission: {claim_data.get('admission_date', 'N/A')}
+• Discharge: {claim_data.get('discharge_date', 'N/A')}
+
+"""
+        
+        # Add next action based on status and stage
+        status_lower = claim_data.get('status', '').lower()
+        stage_lower = claim_data.get('current_stage', '').lower()
+        
+        if status_lower == 'rejected':
+            response += "❌ **Next Action:** This claim was rejected. You can appeal by submitting additional documentation to support your case. Contact support for assistance.\n"
+        elif status_lower == 'approved':
+            response += "✨ **Next Action:** Your claim has been approved! Payment will be processed shortly.\n"
+        elif 'under_review' in status_lower or 'processing' in stage_lower:
+            response += f"⏳ **Next Action:** Your claim is being reviewed. Current stage: {stage}. We'll notify you once there's an update.\n"
+        elif 'missing' in stage_lower or 'document' in stage_lower:
+            response += "📎 **Next Action:** We need additional documents to process your claim. Please upload the required files to proceed.\n"
+        else:
+            response += "❓ **Next Action:** Visit your dashboard for the latest updates on this claim.\n"
+        
+        return response
 
 # Initialize processor
 processor = IntentProcessor()
