@@ -78,7 +78,7 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy", "service": "fastapi", "version": "2.0", "test": "updated"}
+    return {"status": "healthy", "service": "fastapi", "version": "2.0", "update": "forced"}
 
 @app.get("/test-api")
 async def test():
