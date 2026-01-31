@@ -15,7 +15,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allow ALL origins - fixes deployment issue
-    allow_credentials=True,
+    allow_credentials=False,  # Changed to False for compatibility with "*"
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
