@@ -324,8 +324,16 @@ async def chat(request: ChatRequest) -> ChatResponse:
             "claim_id": None
         }
     else:
-        # Process the message (now with claim awareness)
-        result = processor.process(request.message)
+        try:
+            # Process the message (now with claim awareness)
+            result = processor.process(request.message)
+        except Exception as e:
+            print(f"[CHAT] Error processing message: {e}")
+            result = {
+                "reply": "I'm sorry, I encountered an error while processing your message. Please try again or contact support if the issue persists.",
+                "intent": "error",
+                "claim_id": None
+            }
     
     print(f"[CHAT] Intent: {result['intent']}, Claim ID: {result.get('claim_id', 'None')}")
     
