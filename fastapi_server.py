@@ -40,7 +40,7 @@ app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(documents_router, prefix="/api", tags=["Documents"])
 app.include_router(workflows_router, prefix="/api", tags=["Claims & Workflows"])
 app.include_router(batch_router, prefix="/api", tags=["Batch Processing"])
-# app.include_router(chat_router, prefix="", tags=["Chatbot"])
+app.include_router(chat_router, prefix="", tags=["Chatbot"])
 
 # Mount uploads directory for serving files
 if not os.path.exists("uploads"):
