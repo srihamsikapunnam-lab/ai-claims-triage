@@ -80,6 +80,9 @@ async def root():
 async def health():
     return {"status": "healthy", "service": "fastapi", "version": "2.0"}
 
+@app.get("/test")
+async def test():
+    return {"message": "Test endpoint working", "timestamp": "2026-01-31"}
 
 if __name__ == "__main__":
     print("🚀 Starting FastAPI Server on http://localhost:8000")
