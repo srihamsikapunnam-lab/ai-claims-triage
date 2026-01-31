@@ -1,22 +1,23 @@
 class ClaimsAPI {
   constructor() {
-    // Hardcoded for production debugging
+    // Render backend URL (NO trailing slash)
     this.BASE_URL = 'https://ai-claims-backend.onrender.com';
   }
 
-  /* --------------------
-     Health Check
-  -------------------- */
+  /* ======================
+     HEALTH CHECK
+     ====================== */
   async checkHealth() {
     try {
-      const response = await fetch(`${this.BASE_URL}/health`);
-      if (!response.ok) throw new Error('Health check failed');
+      const res = await fetch(`${this.BASE_URL}/health`);
+      if (!res.ok) throw new Error('Health check failed');
 
       return {
         status: 'connected',
         message: 'Backend is healthy'
       };
-    } catch (error) {
+    } catch (err) {
+      console.error('Health check error:', err);
       return {
         status: 'disconnected',
         message: 'Backend not available'
@@ -24,64 +25,95 @@ class ClaimsAPI {
     }
   }
 
-  /* --------------------
-     Predict Claim (Batch)
-  -------------------- */
+  /* ======================
+     AI PREDICTION (BATCH)
+     ====================== */
   async predictClaim(claimData) {
-    const response = await fetch(`${this.BASE_URL}/api/batch/predict`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        claims: [claimData]
-      })
-    });
+    try {
+      const res = await fetch(`${this.BASE_URL}/api/batch/predict`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          claims: [claimData] // backend expects an array
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error('Prediction failed');
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || 'Prediction failed');
+      }
+
+      const data = await res.json();
+      return data.predictions?.[0];
+    } catch (err) {
+      console.error('Predict claim error:', err);
+      throw err;
     }
-
-    const result = await response.json();
-    return result.predictions[0];
   }
 
-  /* --------------------
-     Submit Claim (REAL)
-  -------------------- */
+  /* ======================
+     SUBMIT CLAIM (DATABASE)
+     ====================== */
   async submitClaim(claimData) {
-    const response = await fetch(`${this.BASE_URL}/api/claims`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(claimData)
-    });
+    try {
+      const res = await fetch(`${this.BASE_URL}/api/claims`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(claimData)
+      });
 
-    if (!response.ok) {
-      throw new Error('Claim submission failed');
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || 'Claim submission failed');
+      }
+
+      return await res.json();
+    } catch (err) {
+      console.error('Submit claim error:', err);
+      throw err;
     }
-
-    return await response.json();
   }
 
-  /* --------------------
-     Get Claims
-  -------------------- */
+  /* ======================
+     GET ALL CLAIMS (ADMIN)
+     ====================== */
   async getAllClaims() {
-    const response = await fetch(`${this.BASE_URL}/api/claims`);
+    try {
+      const res = await fetch(`${this.BASE_URL}/api/claims`);
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch claims');
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || 'Failed to fetch claims');
+      }
+
+      return await res.json();
+    } catch (err) {
+      console.error('Get all claims error:', err);
+      throw err;
     }
-
-    return await response.json();
   }
 
+  /* ======================
+     GET USER CLAIMS
+     ====================== */
   async getMyClaims() {
-    const response = await fetch(`${this.BASE_URL}/api/claims/my`);
+    try {
+      const res = await fetch(`${this.BASE_URL}/api/claims/my`);
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch user claims');
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || 'Failed to fetch user claims');
+      }
+
+      return await res.json();
+    } catch (err) {
+      console.error('Get my claims error:', err);
+      throw err;
     }
-
-    return await response.json();
   }
 }
 
