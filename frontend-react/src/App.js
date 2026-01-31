@@ -19,7 +19,7 @@ function AuthenticatedApp() {
     // Check backend health
     const checkHealth = async () => {
       try {
-        const response = await fetch('http://localhost:8000/health');
+        const response = await fetch('https://ai-claims-backend.onrender.com/health');
         if (response.ok) {
           setApiStatus('✅ Connected');
         } else {

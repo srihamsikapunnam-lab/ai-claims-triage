@@ -1,6 +1,6 @@
 class ClaimsAPI {
     constructor() {
-        this.BASE_URL = 'http://localhost:8000';
+        this.BASE_URL = 'https://ai-claims-backend.onrender.com';
     }
 
     async checkHealth() {

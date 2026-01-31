@@ -1,6 +1,6 @@
 import authService from './authService';
 
-const API_BASE_URL = 'https://ai-claims.onrender.com';
+const API_BASE_URL = 'https://ai-claims-backend.onrender.com';
 
 const apiClient = {
   async request(endpoint, options = {}) {

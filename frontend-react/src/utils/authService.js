@@ -1,5 +1,5 @@
 // Direct connection to backend API
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://ai-claims-backend.onrender.com/api';
 
 class AuthService {
   constructor() {
