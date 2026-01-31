@@ -40,7 +40,7 @@ class ClaimDatabase:
             
             # Try UUID first (more specific)
             cursor.execute("""
-                SELECT id, patient_name, diagnosis, amount, status, risk_score, 
+                SELECT id, diagnosis, claimed_amount, status, risk_score, 
                        created_at, updated_at, risk_category
                 FROM claims 
                 WHERE id = ?
@@ -51,21 +51,20 @@ class ClaimDatabase:
             if row:
                 return {
                     "id": row[0],
-                    "patient_name": row[1],
-                    "diagnosis": row[2],
-                    "amount": row[3],
-                    "status": row[4],
-                    "risk_score": row[5],
-                    "created_at": row[6],
-                    "updated_at": row[7],
-                    "risk_category": row[8]
+                    "diagnosis": row[1],
+                    "amount": row[2],
+                    "status": row[3],
+                    "risk_score": row[4],
+                    "created_at": row[5],
+                    "updated_at": row[6],
+                    "risk_category": row[7]
                 }
             
             # Try numeric ID if UUID failed
             try:
                 numeric_id = int(claim_id)
                 cursor.execute("""
-                    SELECT id, patient_name, diagnosis, amount, status, risk_score, 
+                    SELECT id, diagnosis, claimed_amount, status, risk_score, 
                            created_at, updated_at, risk_category
                     FROM claims 
                     WHERE ROWID = ?
@@ -75,14 +74,13 @@ class ClaimDatabase:
                 if row:
                     return {
                         "id": row[0],
-                        "patient_name": row[1],
-                        "diagnosis": row[2],
-                        "amount": row[3],
-                        "status": row[4],
-                        "risk_score": row[5],
-                        "created_at": row[6],
-                        "updated_at": row[7],
-                        "risk_category": row[8]
+                        "diagnosis": row[1],
+                        "amount": row[2],
+                        "status": row[3],
+                        "risk_score": row[4],
+                        "created_at": row[5],
+                        "updated_at": row[6],
+                        "risk_category": row[7]
                     }
             except ValueError:
                 pass  # Not a numeric ID
