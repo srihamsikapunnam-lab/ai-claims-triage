@@ -46,12 +46,12 @@ app.include_router(chat_router, prefix="", tags=["Chatbot"])
 if not os.path.exists("uploads"):
     os.makedirs("uploads/documents", exist_ok=True)
 
-# Mount test page
-if os.path.exists("test_api.html"):
-    from fastapi.responses import FileResponse
-    @app.get("/test")
-    async def serve_test_page():
-        return FileResponse("test_api.html")
+# Mount test page - commented out for production
+# if os.path.exists("test_api.html"):
+#     from fastapi.responses import FileResponse
+#     @app.get("/test")
+#     async def serve_test_page():
+#         return FileResponse("test_api.html")
 
 # Health check
 @app.get("/")
