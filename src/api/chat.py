@@ -21,7 +21,7 @@ class ChatResponse(BaseModel):
 class ClaimDatabase:
     """Database helper for claim lookups"""
     
-    DB_PATH = "src/api/claims.db"
+    DB_PATH = "claims.db"
     
     @staticmethod
     def get_claim(claim_id: str) -> Optional[dict]:
