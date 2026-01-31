@@ -1,5 +1,5 @@
 // Dashboard API Service - Real backend integration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://ai-claims-backend.onrender.com/api';
+const API_BASE_URL = 'https://ai-claims-backend.onrender.com/api';
 
 class DashboardService {
   constructor() {
@@ -15,6 +15,7 @@ class DashboardService {
   }
 
   async getDashboardStats() {
+    console.log('Fetching dashboard stats from:', `${API_BASE_URL}/company/dashboard/stats`);
     const response = await fetch(`${API_BASE_URL}/company/dashboard/stats`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
