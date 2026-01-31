@@ -3,7 +3,7 @@
   publish = "build"
 
 [build.environment]
-  REACT_APP_API_BASE = "https://ai-claims.onrender.com"
+  REACT_APP_API_BASE = "https://ai-claims-backend.onrender.com"
 
 [[redirects]]
   from = "/*"

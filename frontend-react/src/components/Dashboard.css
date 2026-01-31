@@ -1,237 +1,120 @@
-/* =========================
-   Dashboard Page Wrapper
-========================= */
 .dashboard-page {
   max-width: 1300px;
-  margin: 0 auto;
+  margin: auto;
   padding: 20px;
 }
 
-/* =========================
-   Header
-========================= */
-.dashboard-header {
-  margin-bottom: 25px;
-}
-
 .dashboard-header h1 {
-  margin: 0;
   font-size: 26px;
   color: #1f2937;
 }
 
 .dashboard-subtitle {
   color: #6b7280;
-  margin-top: 6px;
   font-size: 14px;
 }
 
-/* =========================
-   Tabs
-========================= */
 .dashboard-tabs {
   display: flex;
   gap: 12px;
-  margin-bottom: 25px;
-  flex-wrap: wrap;
+  margin: 20px 0;
 }
 
 .tab-button {
   padding: 10px 18px;
   border-radius: 20px;
   border: 1px solid #dbeafe;
-  background: #ffffff;
-  cursor: pointer;
-  font-size: 14px;
+  background: white;
   color: #2446db;
-  transition: all 0.25s ease;
+  cursor: pointer;
 }
 
 .tab-button.active {
   background: #2446db;
   color: white;
-  border-color: #2446db;
 }
 
-.tab-button:hover {
-  transform: translateY(-1px);
-}
-
-/* =========================
-   Stats Grid
-========================= */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 25px;
 }
 
 .stat-card {
   background: white;
-  padding: 18px;
   border-radius: 14px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-}
-
-.stat-card h3 {
-  margin: 0;
-  font-size: 14px;
-  color: #6b7280;
+  padding: 18px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
 }
 
 .stat-number {
-  font-size: 28px;
-  font-weight: 600;
-  margin: 8px 0;
-  color: #1f2937;
+  font-size: 26px;
+  margin-top: 8px;
 }
 
-.stat-trend {
-  font-size: 12px;
-  color: #10b981;
-}
-
-/* =========================
-   Statistics Section
-========================= */
-.statistics-section {
-  background: white;
-  padding: 20px;
-  border-radius: 16px;
-  margin-bottom: 30px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.section-header h3 {
-  margin: 0;
-  font-size: 18px;
-  color: #1f2937;
-}
-
-/* =========================
-   Timeframe Selector
-========================= */
-.timeframe-selector {
-  display: flex;
-  gap: 10px;
-}
-
-.timeframe-selector button {
-  padding: 6px 14px;
-  border-radius: 16px;
-  border: 1px solid #dbeafe;
-  background: #f8fafc;
-  cursor: pointer;
-  font-size: 12px;
-  color: #2446db;
-}
-
-.timeframe-selector button.active {
-  background: #2446db;
-  color: white;
-}
-
-/* =========================
-   Metrics Grid
-========================= */
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-}
-
-.metric-card {
-  background: #f8fafc;
-  border-radius: 14px;
-  padding: 16px;
-}
-
-.metric-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.metric-value {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 10px 0;
-  color: #1f2937;
-}
-
-.metric-subtitle {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.metric-progress {
-  background: #e5e7eb;
-  height: 6px;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  background: #2446db;
-}
-
-/* =========================
-   Dashboard Layout
-========================= */
 .dashboard-content {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 24px;
 }
 
-@media (max-width: 900px) {
-  .dashboard-content {
-    grid-template-columns: 1fr;
-  }
+.statistics-section {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 20px;
 }
 
-/* =========================
-   Recent Claims
-========================= */
+.distribution-bar {
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.distribution-bar.approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.distribution-bar.pending {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.distribution-bar.high-risk {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.distribution-bar.rejected {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .recent-claims {
   background: white;
   padding: 20px;
   border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-}
-
-.claims-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
 }
 
 .claim-item {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 12px;
-  transition: all 0.25s ease;
+  margin-top: 12px;
+  cursor: pointer;
 }
 
 .claim-item:hover {
-  background: #f8fafc;
-  transform: translateY(-2px);
+  background: #f9fafb;
 }
 
 .claim-main {
   display: flex;
   justify-content: space-between;
-  font-weight: 500;
 }
 
 .claim-patient {
@@ -239,120 +122,19 @@
   color: #6b7280;
 }
 
-.claim-details {
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-}
-
 .claim-date {
   font-size: 11px;
   color: #9ca3af;
 }
 
-/* =========================
-   Claims Table
-========================= */
-.claims-table-container {
-  overflow-x: auto;
-}
-
 .claims-table {
   width: 100%;
-  border-collapse: collapse;
   background: white;
-  border-radius: 14px;
-  overflow: hidden;
+  border-collapse: collapse;
 }
 
 .claims-table th,
 .claims-table td {
   padding: 12px;
-  text-align: left;
   border-bottom: 1px solid #e5e7eb;
-  font-size: 13px;
-}
-
-.claims-table th {
-  background: #f8fafc;
-  color: #6b7280;
-}
-
-/* =========================
-   Status & Risk
-========================= */
-.status-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  color: white;
-}
-
-.risk-score {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.risk-low { color: #10b981; }
-.risk-medium { color: #f59e0b; }
-.risk-high { color: #ef4444; }
-
-.risk-bar {
-  background: #e5e7eb;
-  height: 5px;
-  border-radius: 5px;
-  margin-top: 4px;
-}
-
-.risk-fill {
-  height: 100%;
-  border-radius: 5px;
-}
-
-.risk-fill.risk-low { background: #10b981; }
-.risk-fill.risk-medium { background: #f59e0b; }
-.risk-fill.risk-high { background: #ef4444; }
-
-/* =========================
-   Buttons
-========================= */
-.btn-primary {
-  background: #2446db;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 14px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.btn-secondary {
-  background: #f1f5f9;
-  color: #1f2937;
-  border: 1px solid #e5e7eb;
-  padding: 8px 14px;
-  border-radius: 14px;
-  cursor: pointer;
-}
-
-.btn-action {
-  background: transparent;
-  color: #2446db;
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-/* =========================
-   Error Banner
-========================= */
-.error-banner {
-  background: #fee2e2;
-  color: #991b1b;
-  padding: 12px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
