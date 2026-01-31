@@ -1,109 +1,70 @@
 import authService from './authService';
 
-// Direct connection to backend API
-const API_BASE = "https://ai-claims.onrender.com";
+const API_BASE_URL = 'https://ai-claims.onrender.com';
 
 const apiClient = {
-  async get(endpoint) {
+  async request(endpoint, options = {}) {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: {
-        'Authorization': `Bearer ${authService.getToken()}`,
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Request failed');
-    }
-
-    return await response.json();
-  },
-
-  async post(endpoint, data) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'POST',
+      ...options,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authService.getToken()}`,
+        ...(authService.getToken()
+          ? { Authorization: `Bearer ${authService.getToken()}` }
+          : {}),
+        ...(options.headers || {}),
       },
-      body: JSON.stringify(data),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Request failed');
+      const text = await response.text();
+      throw new Error(text || 'Request failed');
     }
 
-    return await response.json();
+    return response.json();
   },
 
-  async put(endpoint, data) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  get(endpoint) {
+    return this.request(endpoint);
+  },
+
+  post(endpoint, data) {
+    return this.request(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  put(endpoint, data) {
+    return this.request(endpoint, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authService.getToken()}`,
-      },
       body: JSON.stringify(data),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Request failed');
-    }
-
-    return await response.json();
   },
 
-  async patch(endpoint, data) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  patch(endpoint, data) {
+    return this.request(endpoint, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authService.getToken()}`,
-      },
       body: JSON.stringify(data),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Request failed');
-    }
-
-    return await response.json();
   },
 
-  async delete(endpoint) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  delete(endpoint) {
+    return this.request(endpoint, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${authService.getToken()}`,
-      },
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Request failed');
-    }
-
-    return await response.json();
   },
 
-  async uploadFile(endpoint, formData) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  uploadFile(endpoint, formData) {
+    return fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${authService.getToken()}`,
+        Authorization: `Bearer ${authService.getToken()}`,
       },
       body: formData,
+    }).then(res => {
+      if (!res.ok) throw new Error('Upload failed');
+      return res.json();
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Upload failed');
-    }
-
-    return await response.json();
   },
 };
 
